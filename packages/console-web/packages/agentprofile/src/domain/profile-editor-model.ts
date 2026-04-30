@@ -1,4 +1,4 @@
-import type { ProviderSurfaceBindingView } from "@code-code/agent-contract/platform/management/v1";
+import type { ProviderView } from "@code-code/agent-contract/platform/management/v1";
 import type { VendorView } from "@code-code/agent-contract/platform/provider/v1";
 import {
   buildFallbackProviderOptions,
@@ -48,13 +48,13 @@ export function readSupportedProviderTypesLabel(
 }
 
 export function readFallbackProviderOptions(
-  providerSurfaces: ProviderSurfaceBindingView[],
+  providers: ProviderView[],
   vendors: VendorView[],
   clis: CLIReference[],
   draft: AgentProfileDraft,
 ) {
   return buildFallbackProviderOptions(
-    providerSurfaces,
+    providers,
     vendors,
     clis,
     draft.selectionStrategy.cliId,

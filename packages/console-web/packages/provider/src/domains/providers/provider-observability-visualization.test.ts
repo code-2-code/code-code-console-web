@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ProviderSurfaceRuntime } from "@code-code/agent-contract/provider/v1";
 import type { CLI } from "@code-code/agent-contract/platform/support/v1";
-import type { ProviderView, ProviderSurfaceBindingView } from "@code-code/agent-contract/platform/management/v1";
+import type { ProviderView } from "@code-code/agent-contract/platform/management/v1";
 import type { Vendor } from "@code-code/agent-contract/platform/support/v1";
 import { ProviderProtocol } from "./provider-protocol";
 import {
@@ -11,14 +11,14 @@ import {
 } from "./provider-observability-visualization";
 
 describe("provider-observability-visualization", () => {
-  it("resolves cli owner from cli surface", () => {
-    const owner = resolveProviderObservabilityOwner(createCLIInstance("codex"));
+  it("resolves cli owner from cli provider runtime", () => {
+    const owner = resolveProviderObservabilityOwner(createCLIProvider("codex"));
 
     expect(owner).toEqual({ kind: "cli", cliId: "codex", surfaceId: "codex-cli" });
   });
 
-  it("resolves vendor owner from api surface", () => {
-    const owner = resolveProviderObservabilityOwner(createVendorInstance("minimax"));
+  it("resolves vendor owner from api provider runtime", () => {
+    const owner = resolveProviderObservabilityOwner(createVendorProvider("minimax"));
 
     expect(owner).toEqual({ kind: "vendor", vendorId: "minimax", surfaceId: "minimax-api" });
   });
@@ -26,52 +26,41 @@ describe("provider-observability-visualization", () => {
   it("detects active query support from observability profiles", () => {
     expect(
       providerSupportsActiveQuery(
-        createAccount([{ surfaceId: "minimax-api", runtime: apiRuntime(), vendorId: "minimax" }]),
+        createVendorProvider("minimax"),
         [],
         [createVendor("minimax", true, "minimax-api")],
       ),
     ).toBe(true);
   });
 
-  it("collects active query provider id only from supported surfaces", () => {
+  it("collects active query provider id only when the owner is supported", () => {
     expect(
       providerActiveQueryProviderIDs(
-        createAccount([
-          { surfaceId: "codex-cli", runtime: cliRuntime("codex") },
-          { surfaceId: "openai-api", runtime: apiRuntime(), vendorId: "openai" },
-        ]),
+        createCLIProvider("codex"),
         [createCLI("codex", true, "codex-cli")],
+        [],
+      ),
+    ).toEqual(["provider-1"]);
+    expect(
+      providerActiveQueryProviderIDs(
+        createVendorProvider("openai"),
+        [],
         [createVendor("openai", false, "openai-api")],
       ),
-    ).toEqual(["provider-1"]);
-  });
-
-  it("deduplicates active query probe targets per provider", () => {
-    expect(
-      providerActiveQueryProviderIDs(
-        createAccount([
-          { surfaceId: "codex-cli", runtime: cliRuntime("codex") },
-          { surfaceId: "codex-cli", runtime: cliRuntime("codex") },
-          { surfaceId: "minimax-api", runtime: apiRuntime(), vendorId: "minimax" },
-          { surfaceId: "minimax-api", runtime: apiRuntime(), vendorId: "minimax" },
-        ]),
-        [createCLI("codex", true, "codex-cli")],
-        [createVendor("minimax", true, "minimax-api")],
-      ),
-    ).toEqual(["provider-1"]);
+    ).toEqual([]);
   });
 
   it("detects active query with normalized owner ids", () => {
     expect(
       providerSupportsActiveQuery(
-        createAccount([createCLIInstance("  CoDeX ")]),
+        createCLIProvider("  CoDeX "),
         [createCLI("codex", true, "codex-cli")],
         [],
       ),
     ).toBe(true);
     expect(
       providerSupportsActiveQuery(
-        createAccount([createVendorInstance("  MiNiMaX ")]),
+        createVendorProvider("  MiNiMaX "),
         [],
         [createVendor("minimax", true, "minimax-api")],
       ),
@@ -79,19 +68,23 @@ describe("provider-observability-visualization", () => {
   });
 });
 
-function createCLIInstance(cliId: string): ProviderSurfaceBindingView {
+function createCLIProvider(cliId: string): ProviderView {
   return {
+    providerId: "provider-1",
+    displayName: "Provider",
     surfaceId: "codex-cli",
     runtime: cliRuntime(cliId),
-  };
+  } as ProviderView;
 }
 
-function createVendorInstance(vendorId: string): ProviderSurfaceBindingView {
+function createVendorProvider(vendorId: string): ProviderView {
   return {
+    providerId: "provider-1",
+    displayName: "Provider",
+    productInfoId: vendorId.trim(),
     surfaceId: "minimax-api",
-    vendorId,
     runtime: apiRuntime(),
-  };
+  } as ProviderView;
 }
 
 function cliRuntime(cliId: string): ProviderSurfaceRuntime {
@@ -110,14 +103,6 @@ function apiRuntime(): ProviderSurfaceRuntime {
       value: { protocol: ProviderProtocol.OPENAI_COMPATIBLE, baseUrl: "https://api.example.com/v1" },
     },
   } as ProviderSurfaceRuntime;
-}
-
-function createAccount(surfaces: ProviderView["surfaces"]): ProviderView {
-  return {
-    providerId: "provider-1",
-    displayName: "Provider",
-    surfaces,
-  };
 }
 
 function createCLI(cliId: string, activeQuery = false, surfaceId = "codex-cli"): CLI {

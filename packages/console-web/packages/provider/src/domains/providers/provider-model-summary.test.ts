@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ProviderSurfaceBindingView } from "@code-code/agent-contract/platform/management/v1";
+import type { ProviderView } from "@code-code/agent-contract/platform/management/v1";
 import { getProviderModelCount, providerModelsSummary } from "./provider-model-summary";
 
 describe("provider-model-summary", () => {
@@ -10,7 +10,7 @@ describe("provider-model-summary", () => {
           models: [{ providerModelId: "gpt-4.1" }, { providerModelId: "gpt-4.1-mini" }, { providerModelId: "o4-mini" }],
         },
       },
-    } as ProviderSurfaceBindingView;
+    } as ProviderView;
 
     expect(getProviderModelCount(instance)).toBe(3);
     expect(providerModelsSummary(instance)).toBe("3 models");
@@ -23,7 +23,7 @@ describe("provider-model-summary", () => {
           models: [],
         },
       },
-    } as ProviderSurfaceBindingView;
+    } as ProviderView;
 
     expect(getProviderModelCount(instance)).toBe(0);
     expect(providerModelsSummary(instance)).toBe("No models configured");

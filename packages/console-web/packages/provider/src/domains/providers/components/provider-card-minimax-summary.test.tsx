@@ -86,40 +86,40 @@ function createItem(): ProviderOwnerObservabilityItem {
       {
         metricName: "gen_ai.provider.quota.remaining",
         rows: [
-          { labels: { provider_surface_binding_id: "provider-minimax", model_id: "coding-plan-search", resource: "requests" }, value: 49 },
-          { labels: { provider_surface_binding_id: "provider-minimax", model_id: "coding-plan-vlm", resource: "requests" }, value: 78 },
-          { labels: { provider_surface_binding_id: "provider-minimax", model_id: "MiniMax-M2.7", resource: "requests" }, value: 128 },
-          { labels: { provider_surface_binding_id: "provider-minimax", model_id: "MiniMax-M2.7-Pro", resource: "requests" }, value: 60 },
+          { labels: { surface_id: "provider-minimax", model_id: "coding-plan-search", resource: "requests" }, value: 49 },
+          { labels: { surface_id: "provider-minimax", model_id: "coding-plan-vlm", resource: "requests" }, value: 78 },
+          { labels: { surface_id: "provider-minimax", model_id: "MiniMax-M2.7", resource: "requests" }, value: 128 },
+          { labels: { surface_id: "provider-minimax", model_id: "MiniMax-M2.7-Pro", resource: "requests" }, value: 60 },
         ],
       },
       {
         metricName: "gen_ai.provider.quota.limit",
         rows: [
-          { labels: { provider_surface_binding_id: "provider-minimax", model_id: "coding-plan-search", resource: "requests" }, value: 450 },
-          { labels: { provider_surface_binding_id: "provider-minimax", model_id: "coding-plan-vlm", resource: "requests" }, value: 450 },
-          { labels: { provider_surface_binding_id: "provider-minimax", model_id: "MiniMax-M2.7", resource: "requests" }, value: 200 },
-          { labels: { provider_surface_binding_id: "provider-minimax", model_id: "MiniMax-M2.7-Pro", resource: "requests" }, value: 120 },
+          { labels: { surface_id: "provider-minimax", model_id: "coding-plan-search", resource: "requests" }, value: 450 },
+          { labels: { surface_id: "provider-minimax", model_id: "coding-plan-vlm", resource: "requests" }, value: 450 },
+          { labels: { surface_id: "provider-minimax", model_id: "MiniMax-M2.7", resource: "requests" }, value: 200 },
+          { labels: { surface_id: "provider-minimax", model_id: "MiniMax-M2.7-Pro", resource: "requests" }, value: 120 },
         ],
       },
       {
         metricName: "gen_ai.provider.quota.remaining.fraction.percent",
         rows: [
-          { labels: { provider_surface_binding_id: "provider-minimax", model_id: "coding-plan-search", resource: "requests" }, value: 49 / 450 * 100 },
-          { labels: { provider_surface_binding_id: "provider-minimax", model_id: "coding-plan-vlm", resource: "requests" }, value: 78 / 450 * 100 },
-          { labels: { provider_surface_binding_id: "provider-minimax", model_id: "MiniMax-M2.7", resource: "requests" }, value: 64 },
-          { labels: { provider_surface_binding_id: "provider-minimax", model_id: "MiniMax-M2.7-Pro", resource: "requests" }, value: 50 },
+          { labels: { surface_id: "provider-minimax", model_id: "coding-plan-search", resource: "requests" }, value: 49 / 450 * 100 },
+          { labels: { surface_id: "provider-minimax", model_id: "coding-plan-vlm", resource: "requests" }, value: 78 / 450 * 100 },
+          { labels: { surface_id: "provider-minimax", model_id: "MiniMax-M2.7", resource: "requests" }, value: 64 },
+          { labels: { surface_id: "provider-minimax", model_id: "MiniMax-M2.7-Pro", resource: "requests" }, value: 50 },
         ],
       },
       {
         metricName: "gen_ai.provider.quota.reset.timestamp.seconds",
         rows: [
-          { labels: { provider_surface_binding_id: "provider-minimax", model_id: "coding-plan-search", resource: "requests" }, value: 1776441600 },
-          { labels: { provider_surface_binding_id: "provider-minimax", model_id: "coding-plan-vlm", resource: "requests" }, value: 1776441600 },
-          { labels: { provider_surface_binding_id: "provider-minimax", model_id: "MiniMax-M2.7", resource: "requests" }, value: 1776441600 },
-          { labels: { provider_surface_binding_id: "provider-minimax", model_id: "MiniMax-M2.7-Pro", resource: "requests" }, value: 1776470400 },
+          { labels: { surface_id: "provider-minimax", model_id: "coding-plan-search", resource: "requests" }, value: 1776441600 },
+          { labels: { surface_id: "provider-minimax", model_id: "coding-plan-vlm", resource: "requests" }, value: 1776441600 },
+          { labels: { surface_id: "provider-minimax", model_id: "MiniMax-M2.7", resource: "requests" }, value: 1776441600 },
+          { labels: { surface_id: "provider-minimax", model_id: "MiniMax-M2.7-Pro", resource: "requests" }, value: 1776470400 },
         ],
       },
     ],
-    lastProbeRun: [{ providerSurfaceBindingId: "provider-minimax", timestamp: "2026-04-17T00:00:00Z" }],
+    lastProbeRun: [{ surfaceId: "provider-minimax", timestamp: "2026-04-17T00:00:00Z" }],
   };
 }

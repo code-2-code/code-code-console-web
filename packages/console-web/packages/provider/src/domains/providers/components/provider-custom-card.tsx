@@ -37,7 +37,7 @@ export function ProviderCustomCard({
   );
   const providerViewModel = useMemo(() => providerModel(provider), [provider]);
   const observability = useMemo(
-    () => (owner ? resolveProviderOwnerObservabilityModel(detail, owner, owner.providerSurfaceBindingId || providerViewModel.primarySurfaceId()) : null),
+    () => (owner ? resolveProviderOwnerObservabilityModel(detail, owner, owner.surfaceId || providerViewModel.primarySurfaceId()) : null),
     [detail, owner, providerViewModel],
   );
   const renderer = useMemo(() => resolveProviderCardRenderer(owner), [owner]);

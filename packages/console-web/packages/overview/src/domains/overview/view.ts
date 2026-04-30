@@ -1,4 +1,5 @@
-import { ProviderSurfaceBindingPhase, type CredentialView, type ProviderSurfaceBindingView, type ProviderView } from "@code-code/agent-contract/platform/management/v1";
+import type { CredentialView, ProviderView } from "@code-code/agent-contract/platform/management/v1";
+import { ProviderPhase } from "@code-code/agent-contract/platform/provider/v1/shared";
 
 type OverviewIssueLevel = "red" | "amber";
 
@@ -27,32 +28,32 @@ export function summarizeProviderAccounts(accounts: ProviderView[]): OverviewSum
     issues: [],
   };
   for (const account of accounts) {
-    const stats = providerPhaseStats(account.surfaces);
-    if (stats.invalid > 0 || stats.error > 0) {
+    const phase = account.status?.phase;
+    if (phase === ProviderPhase.INVALID_CONFIG || phase === ProviderPhase.ERROR) {
       summary.attention += 1;
       summary.issues.push({
         level: "red",
         title: `Provider · ${account.displayName || account.providerId}`,
-        reason: providerIssueReason(account.surfaces, stats.ready),
+        reason: account.status?.reason || "Provider endpoint is not fully ready.",
         href: `/providers?account=${encodeURIComponent(account.providerId)}`,
         actionLabel: "Review Provider",
       });
-      continue
+      continue;
     }
-    if (stats.refreshing > 0 || stats.stale > 0) {
+    if (phase === ProviderPhase.REFRESHING || phase === ProviderPhase.STALE) {
       summary.attention += 1;
       summary.issues.push({
         level: "amber",
         title: `Provider · ${account.displayName || account.providerId}`,
-        reason: providerIssueReason(account.surfaces, stats.ready),
+        reason: account.status?.reason || "Provider endpoint is not fully ready.",
         href: `/providers?account=${encodeURIComponent(account.providerId)}`,
         actionLabel: "Review Provider",
       });
-      continue
+      continue;
     }
-    if (stats.ready === account.surfaces.length && account.surfaces.length > 0) {
+    if (phase === ProviderPhase.READY) {
       summary.ready += 1;
-      continue
+      continue;
     }
     summary.unknown += 1;
   }
@@ -97,42 +98,4 @@ function compareIssues(left: OverviewIssue, right: OverviewIssue) {
     return left.level === "red" ? -1 : 1;
   }
   return left.title.localeCompare(right.title);
-}
-
-function providerIssueReason(instances: ProviderSurfaceBindingView[], readyCount: number) {
-  if (instances.length <= 1) {
-    return instances[0]?.status?.reason || "Provider endpoint is not fully ready."
-  }
-  const detail = instances.find((instance) => instance.status?.reason)?.status?.reason
-  if (detail) {
-    return detail
-  }
-  return `${readyCount}/${instances.length} endpoints ready`
-}
-
-function providerPhaseStats(instances: ProviderSurfaceBindingView[]) {
-  const stats = { ready: 0, refreshing: 0, stale: 0, invalid: 0, error: 0, unknown: 0 };
-  for (const instance of instances) {
-    switch (instance.status?.phase) {
-      case ProviderSurfaceBindingPhase.READY:
-        stats.ready += 1;
-        break;
-      case ProviderSurfaceBindingPhase.REFRESHING:
-        stats.refreshing += 1;
-        break;
-      case ProviderSurfaceBindingPhase.STALE:
-        stats.stale += 1;
-        break;
-      case ProviderSurfaceBindingPhase.INVALID_CONFIG:
-        stats.invalid += 1;
-        break;
-      case ProviderSurfaceBindingPhase.ERROR:
-        stats.error += 1;
-        break;
-      default:
-        stats.unknown += 1;
-        break;
-    }
-  }
-  return stats;
 }

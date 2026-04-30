@@ -1,31 +1,31 @@
-import { ProviderSurfaceBindingPhase } from "@code-code/agent-contract/platform/management/v1";
+import { ProviderPhase } from "@code-code/agent-contract/platform/provider/v1/shared";
 
-export function providerStatusColor(phase: ProviderSurfaceBindingPhase | undefined): "green" | "red" | "amber" | "gray" {
+export function providerStatusColor(phase: ProviderPhase | undefined): "green" | "red" | "amber" | "gray" {
   switch (phase) {
-    case ProviderSurfaceBindingPhase.READY:
+    case ProviderPhase.READY:
       return "green";
-    case ProviderSurfaceBindingPhase.REFRESHING:
-    case ProviderSurfaceBindingPhase.STALE:
+    case ProviderPhase.REFRESHING:
+    case ProviderPhase.STALE:
       return "amber";
-    case ProviderSurfaceBindingPhase.INVALID_CONFIG:
-    case ProviderSurfaceBindingPhase.ERROR:
+    case ProviderPhase.INVALID_CONFIG:
+    case ProviderPhase.ERROR:
       return "red";
     default:
       return "gray";
   }
 }
 
-export function providerStatusLabel(phase: ProviderSurfaceBindingPhase | undefined) {
+export function providerStatusLabel(phase: ProviderPhase | undefined) {
   switch (phase) {
-    case ProviderSurfaceBindingPhase.READY:
+    case ProviderPhase.READY:
       return "Ready";
-    case ProviderSurfaceBindingPhase.INVALID_CONFIG:
+    case ProviderPhase.INVALID_CONFIG:
       return "Invalid Config";
-    case ProviderSurfaceBindingPhase.REFRESHING:
+    case ProviderPhase.REFRESHING:
       return "Refreshing";
-    case ProviderSurfaceBindingPhase.STALE:
+    case ProviderPhase.STALE:
       return "Stale";
-    case ProviderSurfaceBindingPhase.ERROR:
+    case ProviderPhase.ERROR:
       return "Error";
     default:
       return "Unknown";
@@ -33,14 +33,14 @@ export function providerStatusLabel(phase: ProviderSurfaceBindingPhase | undefin
 }
 
 export function providerStatusReason(
-  phase: ProviderSurfaceBindingPhase | undefined,
+  phase: ProviderPhase | undefined,
   reason: string | undefined,
 ) {
   const normalizedReason = reason?.trim() ?? "";
   if (!normalizedReason) {
     return "";
   }
-  if (phase === ProviderSurfaceBindingPhase.READY) {
+  if (phase === ProviderPhase.READY) {
     return "";
   }
   return normalizedReason;

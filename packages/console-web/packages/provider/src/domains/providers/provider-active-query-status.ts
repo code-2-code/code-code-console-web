@@ -7,10 +7,6 @@ import { providerModel } from "./provider-model";
 import { resolveProviderOwnerObservabilityModel, type ProviderObservabilityOwner } from "./provider-owner-observability-model";
 import { resolveProviderObservabilityOwner } from "./provider-observability-visualization";
 
-type ProviderActiveQueryStatusOwner = ProviderObservabilityOwner & {
-  providerSurfaceBindingId?: string;
-};
-
 type ProviderActiveQueryStatusSource = {
   detail?: ProviderObservability;
   isLoading: boolean;
@@ -31,13 +27,13 @@ export function useProviderActiveQueryStatusFromObservability(
   provider: ProviderView | null,
   enabled: boolean,
   source: ProviderActiveQueryStatusSource,
-  preferredOwner?: ProviderActiveQueryStatusOwner | null,
+  preferredOwner?: ProviderObservabilityOwner | null,
 ) {
   const providerViewModel = useMemo(() => (provider ? providerModel(provider) : null), [provider]);
   const now = useRelativeNow(enabled);
-  const owner = useMemo<ProviderActiveQueryStatusOwner | null>(
-    () => preferredOwner ?? (providerViewModel ? resolveProviderObservabilityOwner(providerViewModel.primarySurface()) : null),
-    [providerViewModel, preferredOwner],
+  const owner = useMemo<ProviderObservabilityOwner | null>(
+    () => preferredOwner ?? (provider ? resolveProviderObservabilityOwner(provider) : null),
+    [provider, preferredOwner],
   );
 
   return useMemo(() => {
@@ -50,7 +46,7 @@ export function useProviderActiveQueryStatusFromObservability(
     const observability = resolveProviderOwnerObservabilityModel(
       source.detail,
       owner,
-      owner.providerSurfaceBindingId || providerViewModel.primarySurfaceId(),
+      owner.surfaceId || providerViewModel.primarySurfaceId(),
     );
     return readProviderActiveQueryStatus(observability, owner, now);
   }, [providerViewModel, enabled, now, owner, source.detail, source.isError, source.isLoading]);
@@ -61,7 +57,7 @@ export function readProviderActiveQueryStatus(
   owner: ProviderObservabilityOwner | null,
   now: Date = new Date(),
   timeZone?: string,
-): ProviderStatusView {
+): ProviderStatusView | null {
   if (!observability) {
     return { color: "gray", label: "No Probe", reason: "" };
   }
@@ -71,7 +67,7 @@ export function readProviderActiveQueryStatus(
     case 1:
       return buildProviderActiveQueryStatus("green", "Executed", lastProbeAt);
     case 2:
-      return buildProviderActiveQueryStatus("amber", "Throttled", lastProbeAt);
+      return null;
     case 3:
       return buildProviderActiveQueryStatus("red", "Auth Blocked", lastProbeAt, authBlockedReason(observability, owner));
     case 4:

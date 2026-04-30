@@ -8,8 +8,8 @@ describe("provider-active-query-status", () => {
       providerOwnerObservabilityModel({
         owner: "vendor",
         vendorId: "cerebras",
-        lastProbeRun: [{ providerSurfaceBindingId: "inst-1", timestamp: "2026-04-18T15:00:00Z" }],
-        lastProbeOutcome: [{ providerSurfaceBindingId: "inst-1", value: 1 }],
+        lastProbeRun: [{ surfaceId: "inst-1", timestamp: "2026-04-18T15:00:00Z" }],
+        lastProbeOutcome: [{ surfaceId: "inst-1", value: 1 }],
       }, "inst-1"),
       { kind: "vendor", vendorId: "cerebras", surfaceId: "cerebras-api" },
       new Date("2026-04-18T15:10:00Z"),
@@ -28,8 +28,8 @@ describe("provider-active-query-status", () => {
       providerOwnerObservabilityModel({
         owner: "vendor",
         vendorId: "cerebras",
-        lastProbeRun: [{ providerSurfaceBindingId: "inst-1", timestamp: "2026-04-18T15:00:00Z" }],
-        lastProbeOutcome: [{ providerSurfaceBindingId: "inst-1", value: 3 }],
+        lastProbeRun: [{ surfaceId: "inst-1", timestamp: "2026-04-18T15:00:00Z" }],
+        lastProbeOutcome: [{ surfaceId: "inst-1", value: 3 }],
       }, "inst-1"),
       { kind: "vendor", vendorId: "cerebras", surfaceId: "cerebras-api" },
       new Date("2026-04-18T15:10:00Z"),

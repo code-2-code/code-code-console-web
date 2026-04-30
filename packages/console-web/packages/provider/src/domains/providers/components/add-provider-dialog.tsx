@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useForm } from "react-hook-form";
-import { ProviderConnectSessionPhase, type ProviderView } from "@code-code/agent-contract/platform/management/v1";
+import type { ProviderView } from "@code-code/agent-contract/platform/management/v1";
+import { ProviderConnectSessionPhase } from "@code-code/agent-contract/platform/provider/v1/shared";
 import {
   useProviderCLIs,
   useProviderVendors,

@@ -1,6 +1,7 @@
 import type { OAuthCallbackDelivery } from "@code-code/agent-contract/platform/support/v1";
 import { OAuthCallbackMode } from "@code-code/agent-contract/credential/v1";
-import { ProviderConnectSessionPhase, type ProviderConnectSessionView } from "@code-code/agent-contract/platform/management/v1";
+import type { ProviderConnectSessionView } from "@code-code/agent-contract/platform/management/v1";
+import { ProviderConnectSessionPhase } from "@code-code/agent-contract/platform/provider/v1/shared";
 import { providerConnectPhaseColor, providerConnectPhaseLabel } from "./provider-connect-session-view";
 
 export type ProviderConnectSessionStatusView = {

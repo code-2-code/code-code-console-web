@@ -3,9 +3,9 @@ import {
   ListCLIsResponseSchema,
   type CLI,
 } from "@code-code/agent-contract/platform/support/v1";
-import type { ProviderSurfaceBindingView } from "@code-code/agent-contract/platform/management/v1";
+import type { ProviderView } from "@code-code/agent-contract/platform/management/v1";
 import {
-  ListProviderSurfaceBindingsResponseSchema,
+  ListProvidersResponseSchema,
 } from "@code-code/agent-contract/platform/management/v1";
 import { ProviderService, type VendorView } from "@code-code/agent-contract/platform/provider/v1";
 import { useMemo } from "react";
@@ -13,7 +13,7 @@ import useSWR from "swr";
 import { connectClient, jsonFetcher, protobufJsonReadOptions } from "@code-code/console-web-ui";
 import { EMPTY_SESSION_RUNTIME_OPTIONS, type CLIReference, type SessionRuntimeOptions } from "./types";
 
-const providerSurfacesPath = "/api/providers/surface-bindings";
+const providerSurfacesPath = "/api/providers";
 const clisPath = "/api/support/clis";
 const sessionRuntimeOptionsPath = "/api/chats/session-runtime-options";
 const providerServiceClient = connectClient(ProviderService);
@@ -29,11 +29,11 @@ export function useVendors() {
   };
 }
 
-export function useProviderSurfaces() {
+export function useProviders() {
   const { data, error, isLoading, mutate } = useSWR<JsonValue>(providerSurfacesPath, jsonFetcher<JsonValue>);
-  const response = data ? fromJson(ListProviderSurfaceBindingsResponseSchema, data, protobufJsonReadOptions) : undefined;
+  const response = data ? fromJson(ListProvidersResponseSchema, data, protobufJsonReadOptions) : undefined;
   return {
-    providerSurfaces: response?.items || ([] as ProviderSurfaceBindingView[]),
+    providers: response?.items || ([] as ProviderView[]),
     isLoading,
     isError: Boolean(error),
     error,

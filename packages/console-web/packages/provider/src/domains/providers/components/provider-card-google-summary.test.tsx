@@ -93,7 +93,7 @@ function createGoogleQuotaItem(): ProviderOwnerObservabilityItem {
   return {
     owner: "vendor",
     vendorId: "google",
-    lastProbeRun: [{ providerSurfaceBindingId: "instance-1", timestamp: "2026-04-19T08:00:00Z" }],
+    lastProbeRun: [{ surfaceId: "instance-1", timestamp: "2026-04-19T08:00:00Z" }],
     runtimeMetrics: [
       {
         metricName: "gen_ai.provider.quota.limit",
@@ -202,7 +202,7 @@ function createGoogleQuotaItemWithManyRows(): ProviderOwnerObservabilityItem {
   return {
     owner: "vendor",
     vendorId: "google",
-    lastProbeRun: [{ providerSurfaceBindingId: "instance-1", timestamp: "2026-04-19T08:00:00Z" }],
+    lastProbeRun: [{ surfaceId: "instance-1", timestamp: "2026-04-19T08:00:00Z" }],
     runtimeMetrics: [
       {
         metricName: "gen_ai.provider.quota.limit",

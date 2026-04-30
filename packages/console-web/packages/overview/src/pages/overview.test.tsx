@@ -20,13 +20,10 @@ describe("OverviewPage", () => {
       providerAccounts: [{
         providerId: "account-1",
         displayName: "Anthropic",
-        surfaces: [{
-          surfaceId: "endpoint-1",
-          status: {
-            phase: 2,
-            reason: "credential material is not ready",
-          },
-        }],
+        status: {
+          phase: 2,
+          reason: "credential material is not ready",
+        },
       }],
       isLoading: false,
       isError: false,

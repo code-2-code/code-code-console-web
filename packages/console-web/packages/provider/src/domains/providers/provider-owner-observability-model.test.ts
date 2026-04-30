@@ -33,7 +33,7 @@ describe("provider-owner-observability-model", () => {
     expect(resolved).toBeUndefined();
   });
 
-  it("does not inject provider_surface_binding_id into runtime metric row filtering", () => {
+  it("does not inject surface_id into runtime metric row filtering", () => {
     const model = providerOwnerObservabilityModel({
       owner: "vendor",
       vendorId: "google",
@@ -41,8 +41,8 @@ describe("provider-owner-observability-model", () => {
         {
           metricName: "gen_ai.provider.quota.limit",
           rows: [
-            { labels: { provider_surface_binding_id: "instance-1", model_id: "model-a" }, value: 10 },
-            { labels: { provider_surface_binding_id: "instance-2", model_id: "model-b" }, value: 20 },
+            { labels: { surface_id: "instance-1", model_id: "model-a" }, value: 10 },
+            { labels: { surface_id: "instance-2", model_id: "model-b" }, value: 20 },
           ],
         },
       ],
@@ -50,7 +50,7 @@ describe("provider-owner-observability-model", () => {
     expect(model?.metricRows("gen_ai.provider.quota.limit")).toHaveLength(2);
   });
 
-  it("does not inject provider_surface_binding_id for cli owner runtime metrics", () => {
+  it("does not inject surface_id for cli owner runtime metrics", () => {
     const model = providerOwnerObservabilityModel({
       owner: "cli",
       cliId: "codex",
@@ -58,13 +58,39 @@ describe("provider-owner-observability-model", () => {
         {
           metricName: "gen_ai.provider.cli.oauth.codex.primary.window.used.percent",
           rows: [
-            { labels: { provider_surface_binding_id: "instance-1", model_id: "model-a" }, value: 10 },
-            { labels: { provider_surface_binding_id: "instance-2", model_id: "model-b" }, value: 20 },
+            { labels: { surface_id: "instance-1", model_id: "model-a" }, value: 10 },
+            { labels: { surface_id: "instance-2", model_id: "model-b" }, value: 20 },
           ],
         },
       ],
     }, "instance-1");
     expect(model?.metricRows("gen_ai.provider.cli.oauth.codex.primary.window.used.percent")).toHaveLength(2);
+  });
+
+  it("shows auth state only for executed or auth-blocked outcomes", () => {
+    const blocked = providerOwnerObservabilityModel({
+      owner: "vendor",
+      vendorId: "google",
+      lastProbeOutcome: [{ surfaceId: "inst-1", value: 3 }],
+      authUsable: [{ surfaceId: "inst-1", value: 0 }],
+    }, "inst-1");
+    expect(blocked?.displayAuthUsableValue()).toBe(0);
+
+    const executed = providerOwnerObservabilityModel({
+      owner: "vendor",
+      vendorId: "google",
+      lastProbeOutcome: [{ surfaceId: "inst-1", value: 1 }],
+      authUsable: [{ surfaceId: "inst-1", value: 1 }],
+    }, "inst-1");
+    expect(executed?.displayAuthUsableValue()).toBe(1);
+
+    const failed = providerOwnerObservabilityModel({
+      owner: "vendor",
+      vendorId: "google",
+      lastProbeOutcome: [{ surfaceId: "inst-1", value: 5 }],
+      authUsable: [{ surfaceId: "inst-1", value: 0 }],
+    }, "inst-1");
+    expect(failed?.displayAuthUsableValue()).toBeNull();
   });
 });
 

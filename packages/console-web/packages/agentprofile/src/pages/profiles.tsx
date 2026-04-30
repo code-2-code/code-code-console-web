@@ -23,7 +23,7 @@ import {
   saveSkillResourceDraft,
 } from "../domain/profile-resource-actions";
 import { createAgentProfile, deleteAgentProfile, mutateAgentProfiles, updateAgentProfile, useAgentProfile, useAgentProfiles } from "../domain/profile-api";
-import { useCLIReferences, useProviderSurfaces, useSessionRuntimeOptions, useVendors } from "../domain/reference-data";
+import { useCLIReferences, useProviders, useSessionRuntimeOptions, useVendors } from "../domain/reference-data";
 import { useRules, useSkills } from "../domain/text-resource-api";
 
 export function ProfilesPage() {
@@ -35,7 +35,7 @@ export function ProfilesPage() {
   const profiles = useAgentProfiles();
   const editingProfileQuery = useAgentProfile(creatingProfile ? undefined : editingProfileId || undefined);
   const vendors = useVendors();
-  const providerSurfaces = useProviderSurfaces();
+  const providersList = useProviders();
   const clis = useCLIReferences();
   const sessionRuntimeOptions = useSessionRuntimeOptions();
   const mcpList = useMCPServers();
@@ -46,8 +46,8 @@ export function ProfilesPage() {
     if (creatingProfile || !editingProfileQuery.profile) {
       return null;
     }
-    return agentProfileToDraft(editingProfileQuery.profile, providerSurfaces.providerSurfaces, vendors.vendors, sessionRuntimeOptions.sessionRuntimeOptions);
-  }, [creatingProfile, editingProfileQuery.profile, providerSurfaces.providerSurfaces, sessionRuntimeOptions.sessionRuntimeOptions, vendors.vendors]);
+    return agentProfileToDraft(editingProfileQuery.profile, providersList.providers, vendors.vendors, sessionRuntimeOptions.sessionRuntimeOptions);
+  }, [creatingProfile, editingProfileQuery.profile, providersList.providers, sessionRuntimeOptions.sessionRuntimeOptions, vendors.vendors]);
 
   const mcps = useMemo(() => mcpList.mcps.map(mcpListItemToSummary), [mcpList.mcps]);
   const skills = useMemo(() => skillList.skills.map(skillListItemToSummary), [skillList.skills]);
@@ -59,7 +59,7 @@ export function ProfilesPage() {
     }
   };
 
-  const pageError = mcpList.error || skillList.error || ruleList.error || vendors.error || providerSurfaces.error || clis.error || sessionRuntimeOptions.error;
+  const pageError = mcpList.error || skillList.error || ruleList.error || vendors.error || providersList.error || clis.error || sessionRuntimeOptions.error;
 
   return (
     <Flex direction="column" gap="4">
@@ -105,7 +105,7 @@ export function ProfilesPage() {
                       item={item}
                       clis={clis.clis}
                       sessionRuntimeOptions={sessionRuntimeOptions.sessionRuntimeOptions}
-                      providerSurfaces={providerSurfaces.providerSurfaces}
+                      providers={providersList.providers}
                       vendors={vendors.vendors}
                       mcps={mcps}
                       skills={skills}
@@ -162,7 +162,7 @@ export function ProfilesPage() {
         isLoading={!creatingProfile && editingProfileId !== null && editingProfileQuery.isLoading}
         clis={clis.clis}
         sessionRuntimeOptions={sessionRuntimeOptions.sessionRuntimeOptions}
-        providerSurfaces={providerSurfaces.providerSurfaces}
+        providers={providersList.providers}
         vendors={vendors.vendors}
         mcps={mcps}
         skills={skills}

@@ -9,7 +9,6 @@ export function formatProviderObservabilityProbeSummary(response: ProviderObserv
   }, {});
 
   const executed = counts.EXECUTED || 0;
-  const throttled = counts.THROTTLED || 0;
   const authBlocked = counts.AUTH_BLOCKED || 0;
   const failed = counts.FAILED || 0;
   const unsupported = counts.UNSUPPORTED || 0;
@@ -19,7 +18,6 @@ export function formatProviderObservabilityProbeSummary(response: ProviderObserv
   }
   const details = [
     executed > 0 ? `${executed} refreshed` : "",
-    throttled > 0 ? `${throttled} throttled` : "",
     authBlocked > 0 ? `${authBlocked} auth blocked` : "",
     failed > 0 ? `${failed} failed` : "",
     unsupported > 0 ? `${unsupported} unsupported` : "",

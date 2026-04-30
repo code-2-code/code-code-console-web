@@ -1,6 +1,6 @@
 import type { ProviderModelCatalogEntry } from "@code-code/agent-contract/provider/v1";
 
-export type ProviderSurfaceBindingModelPresentation = {
+export type ProviderModelPresentation = {
   detail: string;
   key: string;
   label: string;
@@ -9,7 +9,7 @@ export type ProviderSurfaceBindingModelPresentation = {
 
 export function describeProviderModelCatalogEntry(
   model: ProviderModelCatalogEntry,
-): ProviderSurfaceBindingModelPresentation {
+): ProviderModelPresentation {
   const providerModelId = model.providerModelId.trim();
   const canonicalModelId = model.modelRef?.modelId?.trim() || "";
   const label = canonicalModelId && canonicalModelId !== providerModelId

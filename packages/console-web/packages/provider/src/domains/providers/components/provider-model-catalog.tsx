@@ -1,7 +1,7 @@
 import type { ProviderModelCatalog } from "@code-code/agent-contract/provider/v1";
 import { Flex } from "@radix-ui/themes";
 import { NoDataCallout, SoftBadge } from "@code-code/console-web-ui";
-import { describeProviderModelCatalogEntry } from "../provider-surface-binding-model-presentation";
+import { describeProviderModelCatalogEntry } from "../provider-model-presentation";
 
 type Props = {
   catalog?: ProviderModelCatalog;

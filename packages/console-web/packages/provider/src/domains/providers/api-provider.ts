@@ -14,7 +14,9 @@ const providersPath = "/api/providers";
 export async function updateProvider(providerId: string, displayName: string): Promise<ProviderView> {
   const request = create(UpdateProviderRequestSchema, {
     providerId: providerId,
-    displayName,
+    provider: {
+      displayName,
+    },
   });
   const data = await jsonRequest<JsonValue>(`${providersPath}/${providerId}`, {
     method: "PUT",

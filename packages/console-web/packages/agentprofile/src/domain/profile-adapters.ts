@@ -1,6 +1,6 @@
 import type { AgentProfile } from "@code-code/agent-contract/platform/agent-profile/v1";
-import type { ProviderSurfaceBindingView } from "@code-code/agent-contract/platform/management/v1";
-import { ProviderSurfaceBindingPhase } from "@code-code/agent-contract/platform/management/v1";
+import type { ProviderView } from "@code-code/agent-contract/platform/management/v1";
+import { ProviderPhase } from "@code-code/agent-contract/platform/provider/v1/shared";
 import type { VendorView } from "@code-code/agent-contract/platform/provider/v1";
 import type { AgentProfileDraft, CLIReference, FallbackAvailability, FallbackProviderOption, ProviderType, SelectionFallback, SessionRuntimeOptions } from "./types";
 import {
@@ -41,7 +41,7 @@ export function cloneDraft(draft: AgentProfileDraft): AgentProfileDraft {
   };
 }
 
-export function agentProfileToDraft(profile: AgentProfile, providerSurfaces: ProviderSurfaceBindingView[], vendors: VendorView[], sessionRuntimeOptions: SessionRuntimeOptions): AgentProfileDraft {
+export function agentProfileToDraft(profile: AgentProfile, providers: ProviderView[], vendors: VendorView[], sessionRuntimeOptions: SessionRuntimeOptions): AgentProfileDraft {
   const providerId = profile.selectionStrategy?.providerId || "";
   return {
     profileId: profile.profileId,
@@ -49,7 +49,7 @@ export function agentProfileToDraft(profile: AgentProfile, providerSurfaces: Pro
     selectionStrategy: {
       cliId: providerId,
       executionClass: profile.selectionStrategy?.executionClass || defaultExecutionClass(sessionRuntimeOptions, providerId),
-      fallbackChain: (profile.selectionStrategy?.fallbacks || []).map((item) => fallbackFromMessage(item, providerSurfaces, vendors))
+      fallbackChain: (profile.selectionStrategy?.fallbacks || []).map((item) => fallbackFromMessage(item, providers, vendors))
     },
     mcpIds: [...profile.mcpIds],
     skillIds: [...profile.skillIds],
@@ -65,7 +65,7 @@ export function draftToAgentProfileRequest(draft: AgentProfileDraft) {
       providerId: draft.selectionStrategy.cliId,
       executionClass: draft.selectionStrategy.executionClass,
       fallbacks: draft.selectionStrategy.fallbackChain.map((item) => ({
-        providerRuntimeRef: { surfaceId: item.providerSurfaceBindingId },
+        providerRuntimeRef: { surfaceId: item.providerId },
         modelSelector: { case: "providerModelId" as const, value: item.modelId }
       }))
     },
@@ -107,7 +107,7 @@ export function defaultExecutionClass(sessionRuntimeOptions: SessionRuntimeOptio
 }
 
 export function buildFallbackProviderOptions(
-  providerSurfaces: ProviderSurfaceBindingView[],
+  providers: ProviderView[],
   vendors: VendorView[],
   clis: CLIReference[],
   cliId: string,
@@ -115,9 +115,9 @@ export function buildFallbackProviderOptions(
 ) {
   const allowedTypes = new Set((resolveCLI(cliId, clis)?.supportedProviderTypes || []).map(Number));
   const vendorMap = new Map(vendors.map((item) => [item.vendorId, item]));
-  const selected = new Set(currentChain.map((item) => `${item.providerSurfaceBindingId}:${item.modelId}`));
+  const selected = new Set(currentChain.map((item) => `${item.providerId}:${item.modelId}`));
   const groups = new Map<string, FallbackProviderOption>();
-  for (const surface of providerSurfaces) {
+  for (const surface of providers) {
     const providerType = runtimeProtocol(surface);
     if (!allowedTypes.has(providerType)) {
       continue;
@@ -126,7 +126,7 @@ export function buildFallbackProviderOptions(
     if (surfaceOption.models.length === 0) {
       continue;
     }
-    const groupID = `${surface.vendorId}:${providerLabel(surface)}`;
+    const groupID = `${surface.productInfoId}:${providerLabel(surface)}`;
     const current = groups.get(groupID);
     if (current) {
       current.surfaces.push(surfaceOption);
@@ -134,10 +134,10 @@ export function buildFallbackProviderOptions(
     }
     groups.set(groupID, {
       id: groupID,
-      vendorId: surface.vendorId,
+      vendorId: surface.productInfoId || "",
       label: providerLabel(surface),
-      iconUrl: vendorMap.get(surface.vendorId)?.iconUrl || "",
-      vendorLabel: vendorMap.get(surface.vendorId)?.displayName || surface.vendorId || "Unknown",
+      iconUrl: vendorMap.get(surface.productInfoId || "")?.iconUrl || "",
+      vendorLabel: vendorMap.get(surface.productInfoId || "")?.displayName || surface.productInfoId || "Unknown",
       surfaces: [surfaceOption]
     });
   }
@@ -165,15 +165,15 @@ export function providerTypeLabel(providerType: ProviderType) {
   }
 }
 
-function fallbackFromMessage(item: AgentFallbackMessage, providerSurfaces: ProviderSurfaceBindingView[], vendors: VendorView[]): SelectionFallback {
-  const surface = providerSurfaces.find((current) => current.surfaceId === item.providerRuntimeRef?.surfaceId);
-  const vendor = vendors.find((current) => current.vendorId === surface?.vendorId);
+function fallbackFromMessage(item: AgentFallbackMessage, providers: ProviderView[], vendors: VendorView[]): SelectionFallback {
+  const surface = providers.find((current) => current.surfaceId === item.providerRuntimeRef?.surfaceId);
+  const vendor = vendors.find((current) => current.vendorId === surface?.productInfoId);
   const modelId = item.modelSelector.case === "providerModelId" ? item.modelSelector.value : item.modelSelector.value?.modelId || "";
   return {
     id: `${item.providerRuntimeRef?.surfaceId || "missing"}:${modelId}`,
-    providerSurfaceBindingId: item.providerRuntimeRef?.surfaceId || "",
-    vendorId: surface?.vendorId || "",
-    vendorLabel: vendor?.displayName || surface?.vendorId || "Unknown",
+    providerId: item.providerRuntimeRef?.surfaceId || "",
+    vendorId: surface?.productInfoId || "",
+    vendorLabel: vendor?.displayName || surface?.productInfoId || "Unknown",
     providerLabel: surface ? providerLabel(surface) : item.providerRuntimeRef?.surfaceId || "Missing provider",
     providerIconUrl: vendor?.iconUrl || "",
     providerType: runtimeProtocol(surface),
@@ -183,13 +183,13 @@ function fallbackFromMessage(item: AgentFallbackMessage, providerSurfaces: Provi
   };
 }
 
-function toSurfaceOption(surface: ProviderSurfaceBindingView, selected: Set<string>) {
+function toSurfaceOption(surface: ProviderView, selected: Set<string>) {
   const availability = availabilityFromPhase(surface.status?.phase);
   const models = Array.from(new Set(modelsForSurface(surface)))
     .filter((modelId) => !selected.has(`${surface.surfaceId}:${modelId}`))
     .map((modelId) => ({ id: `${surface.surfaceId}:${modelId}`, modelId, availability }));
   return {
-    providerSurfaceBindingId: surface.surfaceId,
+    providerId: surface.surfaceId,
     label: surfaceLabel(surface),
     providerType: runtimeProtocol(surface),
     availability,
@@ -197,28 +197,28 @@ function toSurfaceOption(surface: ProviderSurfaceBindingView, selected: Set<stri
   };
 }
 
-function modelsForSurface(surface: ProviderSurfaceBindingView) {
+function modelsForSurface(surface: ProviderView) {
   return (surface.runtime?.catalog?.models || []).map((item) => item.providerModelId || item.modelRef?.modelId || "").filter(Boolean);
 }
 
-function providerLabel(surface: ProviderSurfaceBindingView) {
-  return surface.providerDisplayName || surface.displayName || surface.surfaceId;
+function providerLabel(surface: ProviderView) {
+  return surface.displayName || surface.surfaceId;
 }
 
-function surfaceLabel(surface: ProviderSurfaceBindingView) {
+function surfaceLabel(surface: ProviderView) {
   return surface.runtime?.displayName || surface.displayName || surface.surfaceId;
 }
 
-function runtimeProtocol(surface: ProviderSurfaceBindingView | undefined) {
+function runtimeProtocol(surface: ProviderView | undefined) {
   return Number(surface?.runtime?.access.case === "api" ? surface.runtime.access.value.protocol : 0);
 }
 
-function availabilityFromPhase(phase?: ProviderSurfaceBindingPhase): FallbackAvailability {
+function availabilityFromPhase(phase?: ProviderPhase): FallbackAvailability {
   switch (phase) {
-    case ProviderSurfaceBindingPhase.READY:
+    case ProviderPhase.READY:
       return "available";
-    case ProviderSurfaceBindingPhase.REFRESHING:
-    case ProviderSurfaceBindingPhase.STALE:
+    case ProviderPhase.REFRESHING:
+    case ProviderPhase.STALE:
       return "degraded";
     default:
       return "unavailable";

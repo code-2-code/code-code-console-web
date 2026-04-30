@@ -31,7 +31,7 @@ export const EMPTY_SESSION_RUNTIME_OPTIONS: SessionRuntimeOptions = { items: [] 
 
 export type SelectionFallback = {
   id: string;
-  providerSurfaceBindingId: string;
+  providerId: string;
   vendorId: string;
   vendorLabel: string;
   providerLabel: string;
@@ -95,7 +95,7 @@ export type FallbackModelOption = {
 };
 
 export type FallbackSurfaceOption = {
-  providerSurfaceBindingId: string;
+  providerId: string;
   label: string;
   providerType: ProviderType;
   availability: FallbackAvailability;

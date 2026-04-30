@@ -3,11 +3,10 @@ import { create } from "@bufbuild/protobuf";
 import {
   CredentialStatusSchema,
   CredentialViewSchema,
-  ProviderSurfaceBindingPhase,
-  ProviderSurfaceBindingStatusSchema,
-  ProviderSurfaceBindingViewSchema,
+  ProviderStatusSchema,
   ProviderViewSchema,
 } from "@code-code/agent-contract/platform/management/v1";
+import { ProviderPhase } from "@code-code/agent-contract/platform/provider/v1/shared";
 import {
   collectOverviewIssues,
   summarizeCredentials,
@@ -20,17 +19,21 @@ describe("overview view", () => {
       create(ProviderViewSchema, {
         providerId: "account-ready",
         displayName: "OpenAI",
-        surfaces: [providerSurfaceBinding("READY")],
+        status: create(ProviderStatusSchema, {
+          phase: ProviderPhase.READY,
+        }),
       }),
       create(ProviderViewSchema, {
         providerId: "account-alert",
         displayName: "Anthropic",
-        surfaces: [providerSurfaceBinding("INVALID_CONFIG", "credential material is not ready")],
+        status: create(ProviderStatusSchema, {
+          phase: ProviderPhase.INVALID_CONFIG,
+          reason: "credential material is not ready",
+        }),
       }),
       create(ProviderViewSchema, {
         providerId: "account-unknown",
         displayName: "Gemini",
-        surfaces: [],
       }),
     ]);
 
@@ -104,12 +107,4 @@ describe("overview view", () => {
   });
 });
 
-function providerSurfaceBinding(phase: "READY" | "INVALID_CONFIG", reason = "") {
-  return create(ProviderSurfaceBindingViewSchema, {
-    surfaceId: `instance-${phase.toLowerCase()}`,
-    status: create(ProviderSurfaceBindingStatusSchema, {
-      phase: phase === "READY" ? ProviderSurfaceBindingPhase.READY : ProviderSurfaceBindingPhase.INVALID_CONFIG,
-      reason,
-    }),
-  });
-}
+

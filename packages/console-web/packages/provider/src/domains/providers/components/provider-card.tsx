@@ -1,6 +1,5 @@
 import { useMemo, type KeyboardEvent, type MouseEvent } from "react";
-import { Box, Flex, Text } from "@radix-ui/themes";
-import type { ProviderSurface } from "@code-code/agent-contract/provider/v1";
+import { Flex, Text } from "@radix-ui/themes";
 import type { CLI } from "@code-code/agent-contract/platform/support/v1";
 import type { ProviderView } from "@code-code/agent-contract/platform/management/v1";
 import type { Vendor } from "@code-code/agent-contract/platform/support/v1";
@@ -11,17 +10,15 @@ import { resolveProviderCardOwner } from "../provider-card-capability";
 import { resolveProviderCardRenderer } from "../provider-card-registry";
 import { useProviderActiveQueryStatusFromObservability } from "../provider-active-query-status";
 import { providerModel } from "../provider-model";
-import { providerHostTelemetryLatencyLabel, providerHostTelemetryStatus } from "../provider-host-telemetry";
+import { providerHostTelemetryBadgeLabel, providerHostTelemetryStatus } from "../provider-host-telemetry";
 import { resolveProviderActiveQueryOwner } from "../provider-observability-visualization";
-import { resolveProviderOwnerObservabilityModel, type ProviderOwnerObservabilityModel } from "../provider-owner-observability-model";
 import type { ProviderWorkflowStatusView } from "../provider-workflow-status-view";
 import { ProviderCustomCard } from "./provider-custom-card";
-import { AccountIcon as ProviderIdentityIcon, ProbeIcon, ProviderActionIconButton } from "./provider-surface-binding-model-catalog-editor-icons";
+import { ProbeIcon, ProviderActionIconButton } from "./provider-model-catalog-editor-icons";
 
 type Props = {
   provider: ProviderView;
   clis: CLI[];
-  surfaces: ProviderSurface[];
   vendors: Vendor[];
   vendorIconUrl?: string;
   workflowStatus?: ProviderWorkflowStatusView;
@@ -36,7 +33,6 @@ export function ProviderCard({
   clis,
   onOpen,
   onProbeActiveQuery,
-  surfaces,
   vendors,
   vendorIconUrl,
   workflowStatus,
@@ -45,9 +41,7 @@ export function ProviderCard({
 }: Props) {
   const providerViewModel = providerModel(provider);
   const authLabel = providerViewModel.authenticationLabel();
-  const oauthSummary = providerViewModel.oauthSummary();
   const protocolLabels = providerViewModel.protocolLabels();
-  const surfaceLabels = providerViewModel.surfaceLabels(surfaces);
   const cardOwner = useMemo(
     () => resolveProviderCardOwner({
       provider,
@@ -80,26 +74,18 @@ export function ProviderCard({
     isLoading: isStatusLoading,
     isError: isStatusError,
   }, activeQueryOwner) ?? providerViewModel.status();
-  const statusObservability = useMemo(
-    () => (activeQueryOwner ? resolveProviderOwnerObservabilityModel(
-      statusDetail,
-      activeQueryOwner,
-      activeQueryOwner.providerSurfaceBindingId || providerViewModel.primarySurfaceId(),
-    ) : null),
-    [providerViewModel, activeQueryOwner, statusDetail],
-  );
 
   return (
     <SurfaceSectionCard
       title={(
-        <Flex align="center" gap="2">
+        <Flex align="center" gap="2" wrap="wrap" style={{ minWidth: 0 }}>
           <VendorAvatar
             displayName={providerViewModel.displayName()}
             iconUrl={vendorIconUrl}
             size="1"
           />
-          <Text weight="medium">{providerViewModel.displayName()}</Text>
-          <SoftBadge color="gray" label={authLabel} />
+          <Text weight="medium" truncate>{providerViewModel.displayName()}</Text>
+          <StatusBadge color={status.color} label={status.label} />
         </Flex>
       )}
       actions={!readonly && hasActiveQuery ? (
@@ -132,46 +118,22 @@ export function ProviderCard({
         },
       }}
     >
-      {oauthSummary.length > 0 || !hasActiveQuery ? (
-        <Flex mt="3" justify="between" align="center" gap="3">
-          {oauthSummary.length > 0 ? (
-            <Box>
-              {oauthSummary.map((item) => (
-                item.emphasized ? (
-                  <ProviderIdentityTag key={item.key} value={item.value} />
-                ) : (
-                  <Text key={item.key} size="1" color="gray" as="div">
-                    {item.value}
-                  </Text>
-                )
-              ))}
-            </Box>
-          ) : null}
-          {!hasActiveQuery ? (
-            <StatusBadge color={status.color} label={status.label} />
-          ) : null}
-        </Flex>
-      ) : null}
-      <Text size="1" color="gray" mt="3" as="div">
-        {providerViewModel.operationalSummary()}
-      </Text>
-      <ProviderHostTelemetry telemetry={provider.hostTelemetry} />
-      {surfaceLabels.length > 0 || protocolLabels.length > 0 ? (
-        <Flex mt="3" gap="1" wrap="wrap">
-          {surfaceLabels.map((label) => (
-            <SoftBadge key={`surface:${label}`} color="gray" label={label} />
-          ))}
-          {protocolLabels.map((label) => (
-            <SoftBadge key={`protocol:${label}`} color="gray" label={label} />
-          ))}
-        </Flex>
-      ) : null}
-      <ProviderHealth observability={statusObservability} isLoading={isStatusLoading} />
-      {workflowStatus ? (
-        <Flex mt="3">
-          <StatusBadge color={workflowStatus.color} label={workflowStatus.label} />
-        </Flex>
-      ) : null}
+      <Flex gap="1" wrap="wrap">
+        <SoftBadge color="gray" label={authLabel} />
+        {protocolLabels.map((label) => (
+          <SoftBadge key={`protocol:${label}`} color="gray" label={label} />
+        ))}
+        {provider.hostTelemetry?.map((item) => {
+          const telemetry = providerHostTelemetryStatus(item);
+          return (
+            <SoftBadge
+              key={`${item.scheme}:${item.host}:${item.port}`}
+              color={telemetry.color}
+              label={providerHostTelemetryBadgeLabel(item)}
+            />
+          );
+        })}
+      </Flex>
       <ProviderCustomCard
         provider={provider}
         clis={clis}
@@ -181,88 +143,14 @@ export function ProviderCard({
         error={cardError}
         status={hasActiveQuery ? status : null}
       />
-      {status.reason ? (
-        <Text size="1" color="gray" mt="2">
-          {status.reason}
-        </Text>
-      ) : null}
-      {workflowStatus?.reason ? (
-        <Text size="1" color="gray" mt="2">
-          {workflowStatus.reason}
-        </Text>
+      {workflowStatus ? (
+        <Flex align="center" gap="2">
+          <StatusBadge color={workflowStatus.color} label={workflowStatus.label} />
+          {workflowStatus.reason ? (
+            <Text size="1" color="gray" truncate>{workflowStatus.reason}</Text>
+          ) : null}
+        </Flex>
       ) : null}
     </SurfaceSectionCard>
-  );
-}
-
-function ProviderHostTelemetry({ telemetry }: { telemetry: ProviderView["hostTelemetry"] }) {
-  if (!telemetry || telemetry.length === 0) {
-    return null;
-  }
-  return (
-    <Flex mt="3" gap="2" align="center" wrap="wrap">
-      {telemetry.map((item) => {
-        const status = providerHostTelemetryStatus(item);
-        const latency = providerHostTelemetryLatencyLabel(item);
-        return (
-          <Flex key={`${item.scheme}:${item.host}:${item.port}`} align="center" gap="1">
-            <StatusBadge color={status.color} label={latency ? `${status.label} ${latency}` : status.label} />
-          </Flex>
-        );
-      })}
-    </Flex>
-  );
-}
-
-function ProviderHealth({
-  isLoading,
-  observability,
-}: {
-  isLoading: boolean;
-  observability: ProviderOwnerObservabilityModel | null;
-}) {
-  const authUsable = observability?.authUsableValue() ?? null;
-  const credentialLastUsed = observability?.credentialLastUsedRelativeLabel() || null;
-  if (authUsable === null && !credentialLastUsed && !isLoading) {
-    return null;
-  }
-  return (
-    <Flex mt="3" gap="2" align="center" wrap="wrap">
-      {authUsable === null ? (
-        isLoading ? <SoftBadge color="gray" label="Auth checking" /> : null
-      ) : (
-        <StatusBadge
-          color={authUsable > 0 ? "green" : "red"}
-          label={authUsable > 0 ? "Auth usable" : "Auth blocked"}
-        />
-      )}
-      {credentialLastUsed ? (
-        <Text size="1" color="gray">
-          Credential used {credentialLastUsed}
-        </Text>
-      ) : null}
-    </Flex>
-  );
-}
-
-function ProviderIdentityTag({ value }: { value: string }) {
-  return (
-    <Flex
-      align="center"
-      gap="1"
-      px="2"
-      py="1"
-      style={{
-        width: "fit-content",
-        borderRadius: "999px",
-        border: "1px solid var(--gray-a5)",
-        background: "var(--gray-3)",
-      }}
-    >
-      <ProviderIdentityIcon />
-      <Text size="1" weight="medium">
-        {value}
-      </Text>
-    </Flex>
   );
 }

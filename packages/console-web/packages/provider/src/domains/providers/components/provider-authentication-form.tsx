@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
-import { ProviderConnectSessionPhase } from "@code-code/agent-contract/platform/management/v1";
+import { ProviderConnectSessionPhase } from "@code-code/agent-contract/platform/provider/v1/shared";
 import { useProviderCLIs } from "@code-code/console-web-credential";
 import { DialogBackFooterActions, StatusCallout, requestErrorMessage } from "@code-code/console-web-ui";
 import { useProviderConnectSessionPolling, useProviderConnectSessionTerminal } from "../provider-connect-session-polling";

@@ -27,7 +27,9 @@ describe("provider-card-capability", () => {
       displayName: "Codex CLI",
       oauth: {
         providerBinding: { surfaceId: "codex-cli" },
-        providerCard: { enabled: true },
+        observability: {
+          profiles: [{ collection: { case: "activeQuery", value: {} } }],
+        },
       },
     }];
 
@@ -37,20 +39,16 @@ describe("provider-card-capability", () => {
         clis,
         vendors: [],
       }),
-    ).toEqual({ kind: "cli", cliId: "codex", surfaceId: "codex-cli", providerSurfaceBindingId: "codex-cli" });
+    ).toEqual({ kind: "cli", cliId: "codex", surfaceId: "codex-cli" });
   });
 
   it("returns vendor owner when supported", () => {
     const provider: ProviderView = {
       providerId: "provider-1",
       displayName: "OpenAI",
-      vendorId: "openai",
-      surfaces: [{
-        surfaceId: "openai-api",
-        providerId: "provider-1",
-        vendorId: "openai",
-        runtime: apiRuntime(),
-      }],
+      productInfoId: "openai",
+      surfaceId: "openai-api",
+      runtime: apiRuntime(),
     };
     const vendors: Vendor[] = [{
       vendor: {
@@ -59,7 +57,9 @@ describe("provider-card-capability", () => {
       },
       providerBindings: [{
         providerBinding: { surfaceId: "openai-api" },
-        providerCard: { enabled: true },
+        observability: {
+          profiles: [{ collection: { case: "activeQuery", value: {} } }],
+        },
         surfaceTemplates: [],
       }],
     }];
@@ -70,7 +70,7 @@ describe("provider-card-capability", () => {
         clis: [],
         vendors,
       }),
-    ).toEqual({ kind: "vendor", vendorId: "openai", surfaceId: "openai-api", providerSurfaceBindingId: "openai-api" });
+    ).toEqual({ kind: "vendor", vendorId: "openai", surfaceId: "openai-api" });
   });
 });
 
@@ -78,11 +78,8 @@ function createCLIProvider(): ProviderView {
   return {
     providerId: "provider-1",
     displayName: "Codex",
-    surfaces: [{
-      surfaceId: "codex-cli",
-      providerId: "provider-1",
-      runtime: cliRuntime("codex"),
-    }],
+    surfaceId: "codex-cli",
+    runtime: cliRuntime("codex"),
   };
 }
 

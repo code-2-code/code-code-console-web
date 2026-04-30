@@ -23,7 +23,7 @@ export function ProviderAuthenticationView({
       <Dialog.Title size="4" mb="3">Update Auth</Dialog.Title>
       <ProviderAuthenticationForm
         providerId={provider.providerId}
-        vendorId={provider.vendorId}
+        vendorId={provider.productInfoId}
         cliId={cliId}
         kind={authenticationKind}
         onSuccess={onSuccess}

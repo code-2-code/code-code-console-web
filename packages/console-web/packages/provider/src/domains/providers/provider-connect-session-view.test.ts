@@ -1,9 +1,9 @@
 import { create } from "@bufbuild/protobuf";
 import {
-  ProviderConnectSessionPhase,
   ProviderConnectSessionViewSchema,
   ProviderViewSchema,
 } from "@code-code/agent-contract/platform/management/v1";
+import { ProviderConnectSessionPhase } from "@code-code/agent-contract/platform/provider/v1/shared";
 import { describe, expect, it } from "vitest";
 import { isProviderConnectSessionPollingComplete } from "./provider-connect-session-view";
 

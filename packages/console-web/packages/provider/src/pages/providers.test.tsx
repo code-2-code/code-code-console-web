@@ -31,13 +31,7 @@ vi.mock("@code-code/console-web-credential", () => ({
     error: undefined,
     mutate: vi.fn(),
   }),
-  useProviderSurfaces: () => ({
-    surfaces: [],
-    isLoading: false,
-    isError: false,
-    error: undefined,
-    mutate: vi.fn(),
-  }),
+
   useProviderVendors: () => ({
     vendors: [],
     isLoading: false,
@@ -59,7 +53,6 @@ vi.mock("../domains/providers/components/add-provider-dialog", () => ({
     onConnected: (provider: {
       providerId: string;
       displayName: string;
-      surfaces: Array<{ surfaceId: string }>;
     }) => Promise<void> | void;
   }) => (open ? (
     <div>
@@ -72,7 +65,6 @@ vi.mock("../domains/providers/components/add-provider-dialog", () => ({
         onClick={() => void onConnected({
           providerId: "provider-new",
           displayName: "MiniMax",
-          surfaces: [{ surfaceId: "instance-new" }],
         })}
       >
         complete-connect
@@ -104,10 +96,12 @@ const probeAllProviderObservabilityMock = vi.mocked(probeAllProviderObservabilit
 const mutateProviderObservabilityMock = vi.mocked(mutateProviderObservability);
 
 const providerCatalogModel = { providerModelId: "gpt-4.1" };
-const providerSurfaceBindingMock = {
+const providerMock = {
   providerId: "provider-1",
-  surfaceId: "openai-compatible",
+  displayName: "OpenAI",
+  vendorId: "openai",
   providerCredentialId: "cred-1",
+  surfaceId: "openai-compatible",
   runtime: {
     displayName: "Responses API",
     access: {
@@ -124,13 +118,6 @@ const providerSurfaceBindingMock = {
   status: {
     phase: 1,
   },
-};
-const providerMock = {
-  providerId: "provider-1",
-  displayName: "OpenAI",
-  vendorId: "openai",
-  providerCredentialId: "cred-1",
-  surfaces: [providerSurfaceBindingMock],
 };
 
 describe("ProvidersPage", () => {
@@ -163,6 +150,19 @@ describe("ProvidersPage", () => {
     expect(screen.getAllByRole("button", { name: "Custom API Key" })).toHaveLength(1);
     expect(screen.getAllByRole("button", { name: "CLI OAuth" })).toHaveLength(1);
     expect(screen.getByText("No providers.")).toBeInTheDocument();
+  });
+
+  it("filters providers by model and service search text", () => {
+    mockProvidersPageState();
+
+    renderProvidersPage();
+
+    const search = screen.getByRole("textbox", { name: "Search providers" });
+    fireEvent.change(search, { target: { value: "gpt-4.1" } });
+    expect(screen.getByText("OpenAI")).toBeInTheDocument();
+
+    fireEvent.change(search, { target: { value: "missing" } });
+    expect(screen.getByText("No providers match this search.")).toBeInTheDocument();
   });
 
   it("opens the provider dialog from a credential deep link", () => {

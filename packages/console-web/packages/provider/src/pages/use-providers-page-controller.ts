@@ -2,11 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { requestErrorMessage } from "@code-code/console-web-ui";
 import {
-  ProviderStatusEventKind,
   type ProviderStatusEvent,
   type ProviderView,
 } from "@code-code/agent-contract/platform/management/v1";
-import { useProviderCLIs, useProviderSurfaces, useProviderVendors } from "@code-code/console-web-credential";
+import { ProviderStatusEventKind } from "@code-code/agent-contract/platform/provider/v1/shared";
+import { useProviderCLIs, useProviderVendors } from "@code-code/console-web-credential";
 import {
   mutateProviderObservability,
   probeAllProviderObservability,
@@ -34,7 +34,7 @@ export function useProvidersPageController() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { providers, error: providersError, isLoading, isError, mutate, upsertProvider } = useProviders();
   const { clis } = useProviderCLIs();
-  const { surfaces } = useProviderSurfaces();
+
   const { vendors } = useProviderVendors();
   const searchState = readProviderPageSearchState(searchParams);
   const searchFocusKey = providerSearchFocusKey(searchState);
@@ -186,7 +186,7 @@ export function useProvidersPageController() {
     isLoading,
     blockingError,
     clis,
-    surfaces,
+
     vendors,
     isAddDialogOpen,
     preferredAddKind,

@@ -14,7 +14,7 @@ describe("provider-card-antigravity", () => {
       "UTC",
     );
     expect(summary).toEqual({
-      tierLabel: "Google AI Pro",
+      tierLabel: null,
       updatedAtLabel: "04-17 04:55",
       updatedAtTimestamp: "2026-04-17T04:55:00Z",
       rows: [
@@ -42,26 +42,26 @@ describe("provider-card-antigravity", () => {
 function createItem(): ProviderOwnerObservabilityItem {
   return {
     cliId: "antigravity",
-    lastProbeRun: [{ providerSurfaceBindingId: "instance-1", timestamp: "2026-04-17T04:55:00Z" }],
+    lastProbeRun: [{ surfaceId: "instance-1", timestamp: "2026-04-17T04:55:00Z" }],
     runtimeMetrics: [
       {
         metricName: "gen_ai.provider.cli.oauth.antigravity.model.quota.remaining.fraction.percent",
         rows: [
-          { labels: { provider_surface_binding_id: "instance-1", model_id: "gemini-2.5-pro" }, value: 60 },
-          { labels: { provider_surface_binding_id: "instance-1", model_id: "gemini-3.1-pro-high" }, value: 30 },
-          { labels: { provider_surface_binding_id: "instance-1", model_id: "gemini-2.5-flash" }, value: 90 },
-          { labels: { provider_surface_binding_id: "instance-1", model_id: "claude-sonnet-4-6" }, value: 15 },
-          { labels: { provider_surface_binding_id: "instance-1", model_id: "gpt-oss-120b-medium" }, value: 80 },
+          { labels: { surface_id: "instance-1", model_id: "gemini-2.5-pro" }, value: 60 },
+          { labels: { surface_id: "instance-1", model_id: "gemini-3.1-pro-high" }, value: 30 },
+          { labels: { surface_id: "instance-1", model_id: "gemini-2.5-flash" }, value: 90 },
+          { labels: { surface_id: "instance-1", model_id: "claude-sonnet-4-6" }, value: 15 },
+          { labels: { surface_id: "instance-1", model_id: "gpt-oss-120b-medium" }, value: 80 },
         ],
       },
       {
         metricName: "gen_ai.provider.cli.oauth.antigravity.model.quota.reset.timestamp.seconds",
         rows: [
-          { labels: { provider_surface_binding_id: "instance-1", model_id: "gemini-2.5-pro" }, value: 1776405600 },
-          { labels: { provider_surface_binding_id: "instance-1", model_id: "gemini-3.1-pro-high" }, value: 1776409200 },
-          { labels: { provider_surface_binding_id: "instance-1", model_id: "gemini-2.5-flash" }, value: 1776412800 },
-          { labels: { provider_surface_binding_id: "instance-1", model_id: "claude-sonnet-4-6" }, value: 1776412800 },
-          { labels: { provider_surface_binding_id: "instance-1", model_id: "gpt-oss-120b-medium" }, value: 1776412800 },
+          { labels: { surface_id: "instance-1", model_id: "gemini-2.5-pro" }, value: 1776405600 },
+          { labels: { surface_id: "instance-1", model_id: "gemini-3.1-pro-high" }, value: 1776409200 },
+          { labels: { surface_id: "instance-1", model_id: "gemini-2.5-flash" }, value: 1776412800 },
+          { labels: { surface_id: "instance-1", model_id: "claude-sonnet-4-6" }, value: 1776412800 },
+          { labels: { surface_id: "instance-1", model_id: "gpt-oss-120b-medium" }, value: 1776412800 },
         ],
       },
     ],
@@ -69,28 +69,26 @@ function createItem(): ProviderOwnerObservabilityItem {
 }
 
 function createAccount(): ProviderView {
-  return {
-    credentialSubjectSummary: [{ fieldId: "tier", label: "Tier", value: "Google AI Pro" }],
-  } as ProviderView;
+  return {} as ProviderView;
 }
 
 function createLongWindowItem(): ProviderOwnerObservabilityItem {
   return {
     cliId: "antigravity",
-    lastProbeRun: [{ providerSurfaceBindingId: "instance-1", timestamp: "2026-04-17T04:55:00Z" }],
+    lastProbeRun: [{ surfaceId: "instance-1", timestamp: "2026-04-17T04:55:00Z" }],
     runtimeMetrics: [
       {
         metricName: "gen_ai.provider.cli.oauth.antigravity.model.quota.remaining.fraction.percent",
         rows: [
-          { labels: { provider_surface_binding_id: "instance-1", model_id: "gemini-3.1-pro-high" }, value: 100 },
-          { labels: { provider_surface_binding_id: "instance-1", model_id: "gemini-3.1-flash-image" }, value: 100 },
+          { labels: { surface_id: "instance-1", model_id: "gemini-3.1-pro-high" }, value: 100 },
+          { labels: { surface_id: "instance-1", model_id: "gemini-3.1-flash-image" }, value: 100 },
         ],
       },
       {
         metricName: "gen_ai.provider.cli.oauth.antigravity.model.quota.reset.timestamp.seconds",
         rows: [
-          { labels: { provider_surface_binding_id: "instance-1", model_id: "gemini-3.1-pro-high" }, value: 1776661200 },
-          { labels: { provider_surface_binding_id: "instance-1", model_id: "gemini-3.1-flash-image" }, value: 1777006800 },
+          { labels: { surface_id: "instance-1", model_id: "gemini-3.1-pro-high" }, value: 1776661200 },
+          { labels: { surface_id: "instance-1", model_id: "gemini-3.1-flash-image" }, value: 1777006800 },
         ],
       },
     ],

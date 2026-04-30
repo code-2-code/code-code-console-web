@@ -75,7 +75,7 @@ export function readGeminiQuotaSummary(
     return null;
   }
   return {
-    tierLabel: geminiTierLabel(provider.oauthFieldValue("tier")),
+    tierLabel: geminiTierLabel(null),
     ...summary,
   };
 }

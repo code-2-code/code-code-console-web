@@ -2,6 +2,7 @@ import { CatalogSource } from "@code-code/agent-contract/provider/v1";
 
 export function providerCatalogSourceLabelValue(source: CatalogSource | undefined) {
   switch (source) {
+    case CatalogSource.PROVIDER_DISCOVERY:
     case CatalogSource.PROTOCOL_QUERY:
       return "Discovered";
     case CatalogSource.FALLBACK_CONFIG:
@@ -17,8 +18,8 @@ export function providerCatalogSourceHelpValue(source: CatalogSource | undefined
   if (source === CatalogSource.VENDOR_PRESET) {
     return "This provider uses vendor-preset model IDs.";
   }
-  if (source === CatalogSource.PROTOCOL_QUERY) {
-    return "This provider uses model IDs discovered through the selected protocol.";
+  if (source === CatalogSource.PROVIDER_DISCOVERY || source === CatalogSource.PROTOCOL_QUERY) {
+    return "This provider uses model IDs discovered from the configured provider surface.";
   }
   return "This provider uses configured model IDs.";
 }

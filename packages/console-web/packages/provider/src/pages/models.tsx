@@ -80,12 +80,12 @@ export function ModelsPage() {
         />
       </Flex>
 
-      <Flex align="start" gap="5" wrap="wrap">
+      <Flex align="start" gap="5" wrap="nowrap">
         <Box display={{ initial: "none", sm: "block" }} style={{ flex: "0 0 280px", minWidth: 240 }}>
           <ModelFacetControls state={state} />
         </Box>
 
-        <Box style={{ flex: "1 1 640px", minWidth: 0 }}>
+        <Box style={{ flex: "1 1 0", minWidth: 0 }}>
           <ModelActiveFilters
             availabilityFilter={state.availabilityFilter}
             onAvailabilityClear={() => state.handleAvailabilityChange("")}

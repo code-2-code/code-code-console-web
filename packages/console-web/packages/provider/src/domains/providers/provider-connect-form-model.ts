@@ -4,7 +4,7 @@ import {
   isVendorAPIKeyConnectOption,
   type ProviderConnectOption,
 } from "./provider-connect-options";
-import { providerSurfaceRuntimeBaseURL, providerSurfaceRuntimeProtocol } from "./provider-surface-binding-view";
+import { providerSurfaceRuntimeBaseURL, providerSurfaceRuntimeProtocol } from "./provider-runtime-presentation";
 import { providerProtocolLabel } from "./provider-protocol-presentation";
 import { ProviderProtocol } from "./provider-protocol";
 

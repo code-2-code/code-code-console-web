@@ -1,13 +1,13 @@
 import { create, fromJson, toJson, type JsonValue } from "@bufbuild/protobuf";
 import {
-  ConnectProviderRequestSchema,
-  ConnectProviderResponseSchema,
-  GetProviderConnectSessionResponseSchema,
-  ProviderAddMethod,
-  type ConnectProviderRequest,
-  type ConnectProviderResponse,
-  type ProviderConnectSessionView,
+	ConnectProviderRequestSchema,
+	ConnectProviderResponseSchema,
+	GetProviderConnectSessionResponseSchema,
+	type ConnectProviderRequest,
+	type ConnectProviderResponse,
+	type ProviderConnectSessionView,
 } from "@code-code/agent-contract/platform/management/v1";
+import { ProviderAddMethod } from "@code-code/agent-contract/platform/provider/v1/shared";
 import useSWR from "swr";
 import { jsonFetcher, jsonRequest, protobufJsonReadOptions } from "@code-code/console-web-ui";
 

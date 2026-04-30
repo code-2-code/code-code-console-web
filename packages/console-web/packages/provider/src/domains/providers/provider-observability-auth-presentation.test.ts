@@ -54,7 +54,7 @@ function vendorWithForm(): Vendor {
     providerBindings: [{
       $typeName: "platform.support.v1.VendorProviderBinding",
       providerBinding: {
-        $typeName: "platform.support.v1.ProviderSurfaceBinding",
+        $typeName: "platform.management.v1.ProviderView",
         surfaceId: "openai-compatible",
         modelCatalogProbeId: "",
         quotaProbeId: "",

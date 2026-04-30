@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { Dialog } from "@radix-ui/themes";
-import type { ProviderSurface } from "@code-code/agent-contract/provider/v1";
+
 import type { CLI } from "@code-code/agent-contract/platform/support/v1";
 import type { ProviderView } from "@code-code/agent-contract/platform/management/v1";
 import type { Vendor } from "@code-code/agent-contract/platform/support/v1";
 import { requestErrorMessage } from "@code-code/console-web-ui";
 import { deleteProvider, updateProvider } from "../api";
 import { providerModel } from "../provider-model";
-import { providerSurfaceRuntimeCLIID } from "../provider-surface-binding-view";
+import { providerSurfaceRuntimeCLIID } from "../provider-runtime-presentation";
 import { providerObservabilityAuthPresentation } from "../provider-observability-auth-presentation";
 import { providerSupportsActiveQuery, resolveProviderActiveQueryOwner } from "../provider-observability-visualization";
 import { ProviderAuthenticationView } from "./provider-authentication-view";
@@ -18,7 +18,6 @@ import { ProviderRenameView } from "./provider-rename-view";
 type Props = {
   provider: ProviderView | null;
   clis: CLI[];
-  surfaces: ProviderSurface[];
   vendors: Vendor[];
   onClose: () => void;
   onUpdated?: () => void;
@@ -29,7 +28,6 @@ type Props = {
 export function ProviderDetailsDialog({
   provider,
   clis,
-  surfaces,
   vendors,
   onClose,
   onUpdated,
@@ -52,11 +50,11 @@ export function ProviderDetailsDialog({
   const supportsActiveQuery = provider ? providerSupportsActiveQuery(provider, clis, vendors) : false;
   const activeQueryOwner = provider ? resolveProviderActiveQueryOwner(provider, clis, vendors) : null;
   const observabilityAuth = providerObservabilityAuthPresentation(
-    activeQueryOwner?.kind === "vendor" ? activeQueryOwner.vendorId : provider?.vendorId,
+    activeQueryOwner?.kind === "vendor" ? activeQueryOwner.vendorId : provider?.productInfoId,
     vendors,
     activeQueryOwner?.surfaceId || providerViewModel?.primarySurfaceId(),
   );
-  const showDedicatedObservabilityAuthentication = authenticationKind === "apiKey" && Boolean(observabilityAuth);
+  const showDedicatedObservabilityAuthentication = Boolean(observabilityAuth);
 
   const handleClose = () => {
     setView("details");
@@ -134,7 +132,8 @@ export function ProviderDetailsDialog({
           <ProviderDetailsView
             provider={provider}
             authenticationKind={authenticationKind}
-            surfaces={surfaces}
+            vendorIconUrl={vendors.find((v) => v.vendor?.vendorId === provider.productInfoId)?.vendor?.iconUrl}
+
             supportsActiveQuery={supportsActiveQuery}
             isProbingActiveQuery={probingProviderId === provider.providerId}
             deleteError={deleteError}

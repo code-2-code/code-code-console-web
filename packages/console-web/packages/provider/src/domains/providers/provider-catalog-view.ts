@@ -1,14 +1,14 @@
-import type { ProviderSurfaceBindingView } from "@code-code/agent-contract/platform/management/v1";
+import type { ProviderView } from "@code-code/agent-contract/platform/management/v1";
 import {
   providerCatalogSourceHelpValue,
   providerCatalogSourceLabelValue,
 } from "./provider-catalog-presentation";
 
-function providerCatalogSourceLabel(instance: ProviderSurfaceBindingView) {
+function providerCatalogSourceLabel(instance: ProviderView) {
   return providerCatalogSourceLabelValue(instance.runtime?.catalog?.source);
 }
 
-export function providerCatalogSummary(instance: ProviderSurfaceBindingView) {
+export function providerCatalogSummary(instance: ProviderView) {
   const count = instance.runtime?.catalog?.models.length ?? 0;
   if (count === 0) {
     return "No models configured";
@@ -16,7 +16,7 @@ export function providerCatalogSummary(instance: ProviderSurfaceBindingView) {
   return `${providerCatalogSourceLabel(instance)} · ${count} model${count === 1 ? "" : "s"}`;
 }
 
-export function providerCatalogLastSync(instance: ProviderSurfaceBindingView) {
+export function providerCatalogLastSync(instance: ProviderView) {
   const updatedAt = instance.runtime?.catalog?.updatedAt;
   if (!updatedAt) {
     return "Not tracked";
@@ -28,6 +28,6 @@ export function providerCatalogLastSync(instance: ProviderSurfaceBindingView) {
   return date.toLocaleString();
 }
 
-export function providerModelCatalogHelp(instance: ProviderSurfaceBindingView) {
+export function providerModelCatalogHelp(instance: ProviderView) {
   return providerCatalogSourceHelpValue(instance.runtime?.catalog?.source);
 }

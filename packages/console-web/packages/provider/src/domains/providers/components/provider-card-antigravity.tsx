@@ -69,7 +69,7 @@ export function readAntigravityQuotaSummary(
     return null;
   }
   return {
-    tierLabel: provider.oauthFieldValue("tier"),
+    tierLabel: null,
     rows: summary.rows,
     updatedAtLabel: summary.updatedAtLabel,
     updatedAtTimestamp: summary.updatedAtTimestamp,

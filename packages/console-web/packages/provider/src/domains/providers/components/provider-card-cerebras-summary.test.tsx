@@ -59,7 +59,7 @@ function createItem(): ProviderOwnerObservabilityItem {
   return {
     owner: "vendor",
     vendorId: "cerebras",
-    lastProbeRun: [{ providerSurfaceBindingId: "cerebras-4ff931", timestamp: "2026-04-18T15:00:00Z" }],
+    lastProbeRun: [{ surfaceId: "cerebras-4ff931", timestamp: "2026-04-18T15:00:00Z" }],
     runtimeMetrics: [
       {
         metricName: "gen_ai.provider.quota.remaining",
@@ -95,7 +95,7 @@ function quotaRow(
 ) {
   return {
     labels: {
-      provider_surface_binding_id: "cerebras-4ff931",
+      surface_id: "cerebras-4ff931",
       org_id: orgID,
       org_name: orgName,
       model_id: modelID,

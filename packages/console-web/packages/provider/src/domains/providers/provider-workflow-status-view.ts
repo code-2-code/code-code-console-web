@@ -1,8 +1,10 @@
 import {
-  ProviderStatusEventKind,
-  ProviderWorkflowPhase,
   type ProviderStatusEvent,
 } from "@code-code/agent-contract/platform/management/v1";
+import {
+  ProviderStatusEventKind,
+  ProviderWorkflowPhase,
+} from "@code-code/agent-contract/platform/provider/v1/shared";
 
 type WorkflowStatusColor = "green" | "red" | "amber" | "gray";
 

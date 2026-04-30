@@ -8,10 +8,10 @@ import {
   ActiveQueryInputValueTransform,
 } from "@code-code/agent-contract/observability/v1";
 import {
-  ProviderSurfaceBindingPhase,
   ProviderViewSchema,
   type ProviderView,
 } from "@code-code/agent-contract/platform/management/v1";
+import { ProviderPhase } from "@code-code/agent-contract/platform/provider/v1/shared";
 import type { Vendor } from "@code-code/agent-contract/platform/support/v1";
 import { ProviderProtocol } from "../provider-protocol";
 import { ProviderDetailsDialog } from "./provider-details-dialog";
@@ -27,7 +27,6 @@ describe("ProviderDetailsDialog", () => {
         <ProviderDetailsDialog
           provider={mistralProvider()}
           clis={[]}
-          surfaces={[]}
           vendors={[mistralVendor()]}
           onClose={vi.fn()}
           onUpdated={vi.fn()}
@@ -41,35 +40,50 @@ describe("ProviderDetailsDialog", () => {
     expect(screen.getByRole("heading", { name: "Update Mistral Session Token" })).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Paste Mistral session token")).toHaveAttribute("name", "values.access_token");
   });
+
+  it("shows vendor observability multi-field form from support metadata", () => {
+    render(
+      <Theme>
+        <ProviderDetailsDialog
+          provider={googleProvider()}
+          clis={[]}
+          vendors={[googleVendor()]}
+          onClose={vi.fn()}
+          onUpdated={vi.fn()}
+          onProbeActiveQuery={vi.fn()}
+        />
+      </Theme>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Update AI Studio Session" }));
+
+    expect(screen.getByRole("heading", { name: "Update AI Studio Session" })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/SID=\.\.\.; HSID=/)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("AIzaSy...")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("946397203396 or projects/946397203396")).toBeInTheDocument();
+  });
 });
 
 function mistralProvider(): ProviderView {
   return create(ProviderViewSchema, {
     providerId: "mistral-ai",
     displayName: "Mistral AI",
-    vendorId: "mistral",
     providerCredentialId: "mistral-api-key",
-    surfaces: [{
+    productInfoId: "mistral",
+    surfaceId: "openai-compatible",
+    runtime: {
       displayName: "Mistral OpenAI Compatible",
-      surfaceId: "openai-compatible",
-      providerCredentialId: "mistral-api-key",
-      vendorId: "mistral",
-      providerId: "mistral-ai",
-      providerDisplayName: "Mistral AI",
-      runtime: {
-        displayName: "Mistral OpenAI Compatible",
-        access: {
-          case: "api",
-          value: {
-            protocol: ProviderProtocol.OPENAI_COMPATIBLE,
-            baseUrl: "https://api.mistral.ai/v1",
-          },
+      access: {
+        case: "api",
+        value: {
+          protocol: ProviderProtocol.OPENAI_COMPATIBLE,
+          baseUrl: "https://api.mistral.ai/v1",
         },
       },
-      status: {
-        phase: ProviderSurfaceBindingPhase.READY,
-      },
-    }],
+    },
+    status: {
+      phase: ProviderPhase.READY,
+    },
   });
 }
 
@@ -88,7 +102,7 @@ function mistralVendor(): Vendor {
     providerBindings: [{
       $typeName: "platform.support.v1.VendorProviderBinding",
       providerBinding: {
-        $typeName: "platform.support.v1.ProviderSurfaceBinding",
+        $typeName: "platform.management.v1.ProviderView",
         surfaceId: "openai-compatible",
         modelCatalogProbeId: "",
         quotaProbeId: "",
@@ -132,6 +146,127 @@ function mistralVendor(): Vendor {
                   transform: ActiveQueryInputValueTransform.IDENTITY,
                   defaultValue: "",
                 }],
+              },
+            },
+          },
+        }],
+      },
+    }],
+  };
+}
+
+function googleProvider(): ProviderView {
+  return create(ProviderViewSchema, {
+    providerId: "google",
+    displayName: "Google",
+    providerCredentialId: "google-api-key",
+    productInfoId: "google",
+    surfaceId: "gemini",
+    runtime: {
+      displayName: "Google Gemini",
+      access: {
+        case: "api",
+        value: {
+          protocol: ProviderProtocol.GEMINI,
+          baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+        },
+      },
+    },
+    status: {
+      phase: ProviderPhase.READY,
+    },
+  });
+}
+
+function googleVendor(): Vendor {
+  return {
+    $typeName: "platform.support.v1.Vendor",
+    vendor: {
+      $typeName: "vendor_definition.v1.Vendor",
+      vendorId: "google",
+      displayName: "Google",
+      aliases: [],
+      iconUrl: "",
+      websiteUrl: "",
+      description: "",
+    },
+    providerBindings: [{
+      $typeName: "platform.support.v1.VendorProviderBinding",
+      providerBinding: {
+        $typeName: "platform.management.v1.ProviderView",
+        surfaceId: "gemini",
+        modelCatalogProbeId: "",
+        quotaProbeId: "",
+        egressPolicyId: "",
+        headerRewritePolicyId: "",
+      },
+      surfaceTemplates: [],
+      observability: {
+        $typeName: "observability.v1.ObservabilityCapability",
+        profiles: [{
+          $typeName: "observability.v1.ObservabilityProfile",
+          profileId: "aistudio-quota",
+          displayName: "AI Studio Quota",
+          scopeIds: [],
+          metrics: [],
+          metricQueries: [],
+          collection: {
+            case: "activeQuery",
+            value: {
+              $typeName: "observability.v1.ActiveQueryCollection",
+              collectorId: "google-aistudio-quotas",
+              dynamicParameters: [],
+              credentialBackfills: [],
+              inputForm: {
+                $typeName: "observability.v1.ActiveQueryInputForm",
+                schemaId: "google-ai-studio-session",
+                title: "Update AI Studio Session",
+                actionLabel: "Update AI Studio Session",
+                description: "Paste AI Studio browser session fields and the quota project number.",
+                fields: [
+                  {
+                    $typeName: "observability.v1.ActiveQueryInputField",
+                    fieldId: "cookie",
+                    label: "Request Cookie",
+                    description: "Copy the Cookie request header.",
+                    placeholder: "SID=...; HSID=...; SSID=...; SAPISID=...; __Secure-1PAPISID=...",
+                    required: true,
+                    sensitive: true,
+                    control: ActiveQueryInputControl.TEXTAREA,
+                    persistence: ActiveQueryInputPersistence.STORED_MATERIAL,
+                    targetFieldId: "",
+                    transform: ActiveQueryInputValueTransform.IDENTITY,
+                    defaultValue: "",
+                  },
+                  {
+                    $typeName: "observability.v1.ActiveQueryInputField",
+                    fieldId: "page_api_key",
+                    label: "X-Goog-Api-Key",
+                    description: "",
+                    placeholder: "AIzaSy...",
+                    required: true,
+                    sensitive: true,
+                    control: ActiveQueryInputControl.PASSWORD,
+                    persistence: ActiveQueryInputPersistence.STORED_MATERIAL,
+                    targetFieldId: "",
+                    transform: ActiveQueryInputValueTransform.IDENTITY,
+                    defaultValue: "",
+                  },
+                  {
+                    $typeName: "observability.v1.ActiveQueryInputField",
+                    fieldId: "project_id",
+                    label: "Project number",
+                    description: "Use the projects/<number> value.",
+                    placeholder: "946397203396 or projects/946397203396",
+                    required: true,
+                    sensitive: false,
+                    control: ActiveQueryInputControl.TEXT,
+                    persistence: ActiveQueryInputPersistence.STORED_MATERIAL,
+                    targetFieldId: "",
+                    transform: ActiveQueryInputValueTransform.IDENTITY,
+                    defaultValue: "",
+                  },
+                ],
               },
             },
           },

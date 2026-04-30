@@ -1,7 +1,7 @@
 import { useMemo, type ReactNode } from "react";
 import { Box, Flex, Heading, Text } from "@radix-ui/themes";
 import { AsyncState } from "@code-code/console-web-ui";
-import type { ProviderSurface } from "@code-code/agent-contract/provider/v1";
+
 import type { CLI, Vendor } from "@code-code/agent-contract/platform/support/v1";
 import type { ProviderView } from "@code-code/agent-contract/platform/management/v1";
 import { providerModel } from "../provider-model";
@@ -13,7 +13,7 @@ const providerNameCollator = new Intl.Collator("en", { sensitivity: "base", nume
 export type ProviderCardGridProps = {
   providers: ProviderView[];
   clis: CLI[];
-  surfaces: ProviderSurface[];
+
   vendors: Vendor[];
   loading: boolean;
   error?: unknown;
@@ -22,6 +22,8 @@ export type ProviderCardGridProps = {
   heading?: string;
   /** Optional subtitle below the heading. */
   subtitle?: string;
+  /** Empty state title. */
+  emptyTitle?: string;
   /** Slot for header actions (add buttons, refresh quota, etc.). */
   headerActions?: ReactNode;
   /** Slot for callouts between header and grid. */
@@ -44,12 +46,13 @@ export type ProviderCardGridProps = {
 export function ProviderCardGrid({
   providers,
   clis,
-  surfaces,
+
   vendors,
   loading,
   error,
   heading = "Providers",
   subtitle,
+  emptyTitle = "No providers.",
   headerActions,
   headerCallouts,
   readonly = false,
@@ -87,7 +90,7 @@ export function ProviderCardGrid({
         errorTitle="Failed to load providers."
         onRetry={onRetry}
         isEmpty={sortedProviders.length === 0}
-        emptyTitle="No providers."
+        emptyTitle={emptyTitle}
       >
         <Box
           style={{
@@ -101,9 +104,9 @@ export function ProviderCardGrid({
               key={provider.providerId || providerModel(provider).displayName()}
               provider={provider}
               clis={clis}
-              surfaces={surfaces}
+
               vendors={vendors}
-              vendorIconUrl={provider.iconUrl}
+              vendorIconUrl={vendors.find((v) => v.vendor?.vendorId === provider.productInfoId)?.vendor?.iconUrl}
               readonly={readonly}
               workflowStatus={workflowStatuses?.[provider.providerId]}
               isProbingActiveQuery={probingProviderId === provider.providerId}

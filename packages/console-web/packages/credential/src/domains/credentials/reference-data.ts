@@ -1,18 +1,20 @@
 import { fromJson, type JsonValue } from "@bufbuild/protobuf";
 import {
   ListCLIsResponseSchema,
-  ListProviderSurfacesResponseSchema,
   ListVendorsResponseSchema,
   type CLI,
   type Vendor
 } from "@code-code/agent-contract/platform/support/v1";
+import {
+  ListProviderSurfacesResponseSchema,
+} from "@code-code/agent-contract/platform/management/v1";
 import type { ProviderSurface } from "@code-code/agent-contract/provider/v1";
 import useSWR from "swr";
 import { jsonFetcher, protobufJsonReadOptions } from "@code-code/console-web-ui";
 
 const vendorsPath = "/api/support/vendors";
 const clisPath = "/api/support/clis";
-const providerSurfacesPath = "/api/support/provider-surfaces";
+const providerSurfacesPath = "/api/providers/surfaces";
 
 export type ManualCredentialVendorOption = {
   vendorId: string;

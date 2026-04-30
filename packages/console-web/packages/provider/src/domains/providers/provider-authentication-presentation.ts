@@ -1,6 +1,6 @@
 import { ProviderSurfaceKind } from "@code-code/agent-contract/provider/v1";
 
-export function providerSurfaceBindingAuthenticationLabel(kind: ProviderSurfaceKind | undefined) {
+export function providerAuthenticationLabel(kind: ProviderSurfaceKind | undefined) {
   switch (kind) {
     case ProviderSurfaceKind.CLI:
       return "CLI OAuth";

@@ -5,7 +5,6 @@ import type { ProviderView } from "@code-code/agent-contract/platform/management
 import { DialogFooterActions, ErrorCalloutIf, FormTextAreaField, FormTextField, requestErrorMessage } from "@code-code/console-web-ui";
 import { updateProviderObservabilityAuthentication } from "../api-provider";
 import type { ProviderObservabilityAuthField, ProviderObservabilityAuthPresentation } from "../provider-observability-auth-presentation";
-import { providerModel } from "../provider-model";
 
 type Props = {
   provider: ProviderView;
@@ -116,9 +115,9 @@ function appendKeepExistingHint(description: string | undefined) {
   return description ? `${description} ${hint}` : hint;
 }
 
-function fieldDefaultValue(provider: ProviderView, field: ProviderObservabilityAuthField) {
-  if (field.sensitive || field.persistence !== ActiveQueryInputPersistence.STORED_MATERIAL) {
-    return field.defaultValue ?? "";
-  }
-  return providerModel(provider).oauthFieldValue(field.key) ?? field.defaultValue ?? "";
+function fieldDefaultValue(_provider: ProviderView, field: ProviderObservabilityAuthField) {
+	if (field.sensitive || field.persistence !== ActiveQueryInputPersistence.STORED_MATERIAL) {
+		return field.defaultValue ?? "";
+	}
+	return field.defaultValue ?? "";
 }

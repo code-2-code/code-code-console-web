@@ -18,6 +18,7 @@ export interface ProviderOwnerObservabilityModel {
   lastProbeOutcomeValue(): number | null;
   lastProbeReason(): string | null;
   authUsableValue(): number | null;
+  displayAuthUsableValue(): number | null;
   credentialLastUsedTimestamp(): string | null;
   credentialLastUsedRelativeLabel(now?: Date): string | null;
   observedAtTimestamp(): string | null;
@@ -27,11 +28,11 @@ export interface ProviderOwnerObservabilityModel {
 
 class DefaultProviderOwnerObservabilityModel implements ProviderOwnerObservabilityModel {
   readonly raw: ProviderOwnerObservabilityItem;
-  private readonly providerSurfaceBindingId: string;
+  private readonly surfaceId: string;
 
-  constructor(item: ProviderOwnerObservabilityItem, providerSurfaceBindingId: string) {
+  constructor(item: ProviderOwnerObservabilityItem, surfaceId: string) {
     this.raw = item;
-    this.providerSurfaceBindingId = providerSurfaceBindingId.trim();
+    this.surfaceId = surfaceId.trim();
   }
 
   metricRows(metricName: string, labels: Record<string, string> = {}) {
@@ -50,12 +51,12 @@ class DefaultProviderOwnerObservabilityModel implements ProviderOwnerObservabili
   }
 
   lastProbeOutcomeValue() {
-    if (!this.providerSurfaceBindingId) {
+    if (!this.surfaceId) {
       const value = this.raw.lastProbeOutcome?.[0]?.value;
       return typeof value === "number" ? value : null;
     }
     const value = this.raw.lastProbeOutcome?.find(
-      (entry) => (entry.providerSurfaceBindingId || "").trim() === this.providerSurfaceBindingId,
+      (entry) => (entry.surfaceId || "").trim() === this.surfaceId,
     )?.value;
     if (typeof value !== "number") {
       const fallback = this.raw.lastProbeOutcome?.[0]?.value;
@@ -65,11 +66,11 @@ class DefaultProviderOwnerObservabilityModel implements ProviderOwnerObservabili
   }
 
   lastProbeReason() {
-    if (!this.providerSurfaceBindingId) {
+    if (!this.surfaceId) {
       return this.raw.lastProbeReason?.[0]?.reason?.trim() || null;
     }
     const matched = this.raw.lastProbeReason?.find(
-      (entry) => (entry.providerSurfaceBindingId || "").trim() === this.providerSurfaceBindingId,
+      (entry) => (entry.surfaceId || "").trim() === this.surfaceId,
     )?.reason?.trim();
     if (matched) {
       return matched;
@@ -79,6 +80,16 @@ class DefaultProviderOwnerObservabilityModel implements ProviderOwnerObservabili
 
   authUsableValue() {
     return this.readSurfaceValue(this.raw.authUsable);
+  }
+
+  displayAuthUsableValue() {
+    switch (this.lastProbeOutcomeValue()) {
+      case 1:
+      case 3:
+        return this.authUsableValue();
+      default:
+        return null;
+    }
   }
 
   credentialLastUsedTimestamp() {
@@ -108,15 +119,15 @@ class DefaultProviderOwnerObservabilityModel implements ProviderOwnerObservabili
     return this.readSurfaceTimestamp(this.raw.lastProbeRun);
   }
 
-  private readSurfaceValue(rows: Array<{ providerSurfaceBindingId?: string; value?: number }> | undefined) {
-    if (!this.providerSurfaceBindingId) {
+  private readSurfaceValue(rows: Array<{ surfaceId?: string; value?: number }> | undefined) {
+    if (!this.surfaceId) {
       const value = rows?.[0]?.value;
       return typeof value === "number" ? value : null;
     }
     const matched = rows?.find(
-      (entry) => (entry.providerSurfaceBindingId || "").trim() === this.providerSurfaceBindingId,
+      (entry) => (entry.surfaceId || "").trim() === this.surfaceId,
     );
-    const accountLevel = rows?.find((entry) => (entry.providerSurfaceBindingId || "").trim() === "");
+    const accountLevel = rows?.find((entry) => (entry.surfaceId || "").trim() === "");
     const value = matched?.value ?? accountLevel?.value;
     if (typeof value === "number") {
       return value;
@@ -124,26 +135,26 @@ class DefaultProviderOwnerObservabilityModel implements ProviderOwnerObservabili
     return null;
   }
 
-  private readSurfaceTimestamp(rows: Array<{ providerSurfaceBindingId?: string; timestamp?: string }> | undefined) {
-    if (!this.providerSurfaceBindingId) {
+  private readSurfaceTimestamp(rows: Array<{ surfaceId?: string; timestamp?: string }> | undefined) {
+    if (!this.surfaceId) {
       return rows?.[0]?.timestamp?.trim() || "";
     }
-    const matched = rows?.find((entry) => (entry.providerSurfaceBindingId || "").trim() === this.providerSurfaceBindingId)?.timestamp?.trim() || "";
+    const matched = rows?.find((entry) => (entry.surfaceId || "").trim() === this.surfaceId)?.timestamp?.trim() || "";
     if (matched) {
       return matched;
     }
-    return rows?.find((entry) => (entry.providerSurfaceBindingId || "").trim() === "")?.timestamp?.trim() || "";
+    return rows?.find((entry) => (entry.surfaceId || "").trim() === "")?.timestamp?.trim() || "";
   }
 }
 
 export function providerOwnerObservabilityModel(
   item: ProviderOwnerObservabilityItem | undefined,
-  providerSurfaceBindingId: string,
+  surfaceId: string,
 ): ProviderOwnerObservabilityModel | null {
   if (!item) {
     return null;
   }
-  return new DefaultProviderOwnerObservabilityModel(item, providerSurfaceBindingId);
+  return new DefaultProviderOwnerObservabilityModel(item, surfaceId);
 }
 
 export function resolveProviderOwnerObservabilityItem(
@@ -173,9 +184,9 @@ export function resolveProviderOwnerObservabilityItem(
 export function resolveProviderOwnerObservabilityModel(
   detail: ProviderObservability | undefined,
   owner: ProviderObservabilityOwner,
-  providerSurfaceBindingId: string,
+  surfaceId: string,
 ) {
-  return providerOwnerObservabilityModel(resolveProviderOwnerObservabilityItem(detail, owner), providerSurfaceBindingId);
+  return providerOwnerObservabilityModel(resolveProviderOwnerObservabilityItem(detail, owner), surfaceId);
 }
 
 export function normalizeMetricPercent(value: number) {

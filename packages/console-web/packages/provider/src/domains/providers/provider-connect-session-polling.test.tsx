@@ -1,7 +1,7 @@
 import {
   act,
   renderHook } from "@testing-library/react";
-import { ProviderConnectSessionPhase } from "@code-code/agent-contract/platform/management/v1";
+import { ProviderConnectSessionPhase } from "@code-code/agent-contract/platform/provider/v1/shared";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useProviderConnectSessionPolling } from "./provider-connect-session-polling";
 
