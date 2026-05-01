@@ -4,23 +4,23 @@ import { ProviderProtocol } from "./provider-protocol";
 import { providerConnectFormModel } from "./provider-connect-form-model";
 
 describe("provider connect form model", () => {
-  it("shows api key fields for vendor api key options", () => {
+  it("shows api key fields for surface api key options", () => {
     expect(providerConnectFormModel({
-      id: "vendor:cerebras",
-      kind: "vendorApiKey",
+      id: "surface:cerebras-api",
+      kind: "surfaceApiKey",
       displayName: "Cerebras",
-      vendorId: "cerebras",
       prefilledSurfaces: [],
-    }, [], "").showAPIKeyFields()).toBe(true);
+    }).showAPIKeyFields()).toBe(true);
 
     expect(providerConnectFormModel({
       id: "cli:gemini",
       kind: "cliOAuth",
       displayName: "Gemini",
       cliId: "gemini",
+      surfaceId: "gemini-cli",
       flow: OAuthAuthorizationFlow.CODE,
       recommended: true,
-    }, [], "").showAPIKeyFields()).toBe(false);
+    }).showAPIKeyFields()).toBe(false);
   });
 
   it("includes gemini in custom api key protocol options", () => {
@@ -28,7 +28,8 @@ describe("provider connect form model", () => {
       id: "custom-api-key",
       kind: "customApiKey",
       displayName: "Custom API Key",
-    }, [], "").protocolOptions();
+      surfaceId: "custom.api",
+    }).protocolOptions();
 
     expect(options.map((item) => item.value)).toContain(String(ProviderProtocol.GEMINI));
   });

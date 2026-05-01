@@ -1,5 +1,6 @@
 import type { ProviderView } from "@code-code/agent-contract/platform/management/v1";
-import type { VendorView } from "@code-code/agent-contract/platform/provider/v1";
+import type { ProductInfo } from "@code-code/agent-contract/product-info/v1";
+import type { Surface } from "@code-code/agent-contract/platform/support/v1";
 import {
   buildFallbackProviderOptions,
   defaultExecutionClass,
@@ -49,14 +50,16 @@ export function readSupportedProviderTypesLabel(
 
 export function readFallbackProviderOptions(
   providers: ProviderView[],
-  vendors: VendorView[],
-  clis: CLIReference[],
+  surfaces: Surface[],
+  productInfos: ProductInfo[],
+  sessionRuntimeOptions: SessionRuntimeOptions,
   draft: AgentProfileDraft,
 ) {
   return buildFallbackProviderOptions(
     providers,
-    vendors,
-    clis,
+    surfaces,
+    productInfos,
+    sessionRuntimeOptions,
     draft.selectionStrategy.cliId,
     draft.selectionStrategy.fallbackChain,
   );
@@ -160,6 +163,9 @@ export function validateProfileDraft(draft: AgentProfileDraft) {
   }
   if (draft.selectionStrategy.fallbackChain.length === 0) {
     return "At least one fallback is required";
+  }
+  if (draft.selectionStrategy.fallbackChain.some((item) => !item.endpoint)) {
+    return "Every fallback must include a provider endpoint";
   }
   return null;
 }

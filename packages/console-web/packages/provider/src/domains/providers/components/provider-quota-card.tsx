@@ -14,6 +14,7 @@ import type { ProviderStatusView } from "../provider-model";
 export type { ProviderQuotaCardRow } from "../provider-quota-metric-aggregation";
 
 type ProviderQuotaCardProps = {
+  title?: string;
   loading: boolean;
   error?: unknown;
   updatedAtLabel?: string | null;
@@ -23,9 +24,11 @@ type ProviderQuotaCardProps = {
   titleSuffix?: ReactNode;
   controls?: ReactNode;
   loadingLines?: readonly QuotaPanelSkeletonLine[];
+  showAllRows?: boolean;
 };
 
 export function ProviderQuotaCard({
+  title,
   loading,
   error,
   updatedAtLabel,
@@ -35,6 +38,7 @@ export function ProviderQuotaCard({
   titleSuffix,
   controls,
   loadingLines,
+  showAllRows = false,
 }: ProviderQuotaCardProps) {
   const now = useRelativeNow(Boolean(updatedAtTimestamp));
   const resolvedUpdatedAtLabel = useMemo(
@@ -63,15 +67,14 @@ export function ProviderQuotaCard({
       loading={loading}
       error={error}
       errorTitle="Failed to load quota metrics."
-      isEmpty={rows.length === 0}
-      emptyContent={(
+      loadingContent={<QuotaPanelSkeleton loadingLines={loadingLines} />}
+    >
+      <QuotaPanel title={title} rows={rows} meta={meta} controls={controls} showAllRows={showAllRows} />
+      {rows.length === 0 ? (
         <div style={{ marginTop: "var(--space-3)" }}>
           <Text size="1" color="gray">No current quota gauge values.</Text>
         </div>
-      )}
-      loadingContent={<QuotaPanelSkeleton loadingLines={loadingLines} />}
-    >
-      <QuotaPanel rows={rows} meta={meta} controls={controls} />
+      ) : null}
     </AsyncState>
   );
 }

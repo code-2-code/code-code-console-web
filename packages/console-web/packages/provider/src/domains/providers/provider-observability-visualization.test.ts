@@ -1,31 +1,34 @@
 import { describe, expect, it } from "vitest";
-import type { ProviderSurfaceRuntime } from "@code-code/agent-contract/provider/v1";
+import { ProviderEndpointType, type ProviderEndpoint } from "@code-code/agent-contract/provider/v1";
 import type { CLI } from "@code-code/agent-contract/platform/support/v1";
 import type { ProviderView } from "@code-code/agent-contract/platform/management/v1";
 import type { Vendor } from "@code-code/agent-contract/platform/support/v1";
 import { ProviderProtocol } from "./provider-protocol";
 import {
-  providerActiveQueryProviderIDs,
+  providerQuotaQueryProviderIDs,
   resolveProviderObservabilityOwner,
-  providerSupportsActiveQuery,
+  providerSupportsQuotaQuery,
 } from "./provider-observability-visualization";
 
 describe("provider-observability-visualization", () => {
-  it("resolves cli owner from cli provider runtime", () => {
+  it("resolves cli owner from cli provider endpoint", () => {
     const owner = resolveProviderObservabilityOwner(createCLIProvider("codex"));
 
     expect(owner).toEqual({ kind: "cli", cliId: "codex", surfaceId: "codex-cli" });
   });
 
-  it("resolves vendor owner from api provider runtime", () => {
-    const owner = resolveProviderObservabilityOwner(createVendorProvider("minimax"));
+  it("resolves vendor owner from api provider endpoint", () => {
+    const owner = resolveProviderObservabilityOwner(
+      createVendorProvider("minimax"),
+      [createVendor("minimax", false, "minimax-api")],
+    );
 
     expect(owner).toEqual({ kind: "vendor", vendorId: "minimax", surfaceId: "minimax-api" });
   });
 
-  it("detects active query support from observability profiles", () => {
+  it("detects quota query support from observability profiles", () => {
     expect(
-      providerSupportsActiveQuery(
+      providerSupportsQuotaQuery(
         createVendorProvider("minimax"),
         [],
         [createVendor("minimax", true, "minimax-api")],
@@ -33,16 +36,16 @@ describe("provider-observability-visualization", () => {
     ).toBe(true);
   });
 
-  it("collects active query provider id only when the owner is supported", () => {
+  it("collects quota query provider id only when the owner is supported", () => {
     expect(
-      providerActiveQueryProviderIDs(
+      providerQuotaQueryProviderIDs(
         createCLIProvider("codex"),
         [createCLI("codex", true, "codex-cli")],
         [],
       ),
     ).toEqual(["provider-1"]);
     expect(
-      providerActiveQueryProviderIDs(
+      providerQuotaQueryProviderIDs(
         createVendorProvider("openai"),
         [],
         [createVendor("openai", false, "openai-api")],
@@ -50,16 +53,16 @@ describe("provider-observability-visualization", () => {
     ).toEqual([]);
   });
 
-  it("detects active query with normalized owner ids", () => {
+  it("detects quota query with normalized owner ids", () => {
     expect(
-      providerSupportsActiveQuery(
+      providerSupportsQuotaQuery(
         createCLIProvider("  CoDeX "),
         [createCLI("codex", true, "codex-cli")],
         [],
       ),
     ).toBe(true);
     expect(
-      providerSupportsActiveQuery(
+      providerSupportsQuotaQuery(
         createVendorProvider("  MiNiMaX "),
         [],
         [createVendor("minimax", true, "minimax-api")],
@@ -73,7 +76,8 @@ function createCLIProvider(cliId: string): ProviderView {
     providerId: "provider-1",
     displayName: "Provider",
     surfaceId: "codex-cli",
-    runtime: cliRuntime(cliId),
+    endpoints: [cliEndpoint(cliId)],
+    models: [],
   } as ProviderView;
 }
 
@@ -81,50 +85,55 @@ function createVendorProvider(vendorId: string): ProviderView {
   return {
     providerId: "provider-1",
     displayName: "Provider",
-    productInfoId: vendorId.trim(),
     surfaceId: "minimax-api",
-    runtime: apiRuntime(),
+    endpoints: [apiEndpoint()],
+    models: [],
   } as ProviderView;
 }
 
-function cliRuntime(cliId: string): ProviderSurfaceRuntime {
+function cliEndpoint(cliId: string): ProviderEndpoint {
   return {
-    access: {
+    type: ProviderEndpointType.CLI,
+    shape: {
       case: "cli",
       value: { cliId },
     },
-  } as ProviderSurfaceRuntime;
+  } as ProviderEndpoint;
 }
 
-function apiRuntime(): ProviderSurfaceRuntime {
+function apiEndpoint(): ProviderEndpoint {
   return {
-    access: {
+    type: ProviderEndpointType.API,
+    shape: {
       case: "api",
       value: { protocol: ProviderProtocol.OPENAI_COMPATIBLE, baseUrl: "https://api.example.com/v1" },
     },
-  } as ProviderSurfaceRuntime;
+  } as ProviderEndpoint;
 }
 
-function createCLI(cliId: string, activeQuery = false, surfaceId = "codex-cli"): CLI {
+function createCLI(cliId: string, quotaQuery = false, _surfaceId = "codex-cli"): CLI {
   return {
     cliId,
     oauth: {
-      providerBinding: { surfaceId },
       observability: {
-        profiles: activeQuery ? [{ collection: { case: "activeQuery", value: {} } }] : [],
+        profiles: quotaQuery ? [{ collection: { case: "quotaQuery", value: {} } }] : [],
       },
     },
   };
 }
 
-function createVendor(vendorId: string, activeQuery = false, surfaceId = "minimax-api"): Vendor {
+function createVendor(vendorId: string, quotaQuery = false, surfaceId = "minimax-api"): Vendor {
   return {
     vendor: { vendorId },
-    providerBindings: [{
-      providerBinding: { surfaceId },
-      surfaceTemplates: [],
+    surfaces: [{
+      surfaceId,
+      productInfoId: vendorId.trim(),
+      spec: {
+        case: "api",
+        value: { apiEndpoints: [{ baseUrl: "https://api.example.com/v1", protocol: ProviderProtocol.OPENAI_COMPATIBLE }] },
+      },
       observability: {
-        profiles: activeQuery ? [{ collection: { case: "activeQuery", value: {} } }] : [],
+        profiles: quotaQuery ? [{ collection: { case: "quotaQuery", value: {} } }] : [],
       },
     }],
   };

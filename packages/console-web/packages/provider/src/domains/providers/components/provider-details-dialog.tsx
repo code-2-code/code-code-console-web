@@ -1,37 +1,48 @@
 import { useState } from "react";
 import { Dialog } from "@radix-ui/themes";
 
-import type { CLI } from "@code-code/agent-contract/platform/support/v1";
+import type { CLI, Surface } from "@code-code/agent-contract/platform/support/v1";
 import type { ProviderView } from "@code-code/agent-contract/platform/management/v1";
+import type { ProductInfo } from "@code-code/agent-contract/product-info/v1";
 import type { Vendor } from "@code-code/agent-contract/platform/support/v1";
 import { requestErrorMessage } from "@code-code/console-web-ui";
 import { deleteProvider, updateProvider } from "../api";
 import { providerModel } from "../provider-model";
-import { providerSurfaceRuntimeCLIID } from "../provider-runtime-presentation";
+import { providerSupportsModelCatalogProbe } from "../provider-model-catalog-probe";
 import { providerObservabilityAuthPresentation } from "../provider-observability-auth-presentation";
-import { providerSupportsActiveQuery, resolveProviderActiveQueryOwner } from "../provider-observability-visualization";
+import { providerSupportsQuotaQuery, resolveProviderQuotaQueryOwner } from "../provider-observability-visualization";
 import { ProviderAuthenticationView } from "./provider-authentication-view";
 import { ProviderDetailsView } from "./provider-details-view";
 import { ProviderObservabilityAuthenticationView } from "./provider-observability-authentication-view";
 import { ProviderRenameView } from "./provider-rename-view";
+import { resolveProductInfo } from "../provider-product-info";
+import { cliIdForSurface, providerProductInfoId } from "../provider-support-surface";
 
 type Props = {
   provider: ProviderView | null;
   clis: CLI[];
+  productInfos: ProductInfo[];
+  surfaces: Surface[];
   vendors: Vendor[];
   onClose: () => void;
   onUpdated?: () => void;
-  onProbeActiveQuery: (provider: ProviderView) => void;
+  onProbeModelCatalog: (provider: ProviderView) => void;
+  onProbeQuotaQuery: (provider: ProviderView) => void;
+  probingModelCatalogProviderId?: string;
   probingProviderId?: string;
 };
 
 export function ProviderDetailsDialog({
   provider,
   clis,
+  productInfos,
+  surfaces,
   vendors,
   onClose,
   onUpdated,
-  onProbeActiveQuery,
+  onProbeModelCatalog,
+  onProbeQuotaQuery,
+  probingModelCatalogProviderId,
   probingProviderId,
 }: Props) {
   const [view, setView] = useState<"details" | "rename" | "authentication" | "observabilityAuthentication">("details");
@@ -47,15 +58,16 @@ export function ProviderDetailsDialog({
     ? normalizedRenameValue !== "" && normalizedRenameValue !== providerDisplayName
     : false;
   const authenticationKind = providerViewModel?.authenticationKind() || "apiKey";
-  const supportsActiveQuery = provider ? providerSupportsActiveQuery(provider, clis, vendors) : false;
-  const activeQueryOwner = provider ? resolveProviderActiveQueryOwner(provider, clis, vendors) : null;
+  const supportsModelCatalogProbe = providerSupportsModelCatalogProbe(provider, surfaces);
+  const supportsQuotaQuery = provider ? providerSupportsQuotaQuery(provider, clis, vendors) : false;
+  const quotaQueryOwner = provider ? resolveProviderQuotaQueryOwner(provider, clis, vendors) : null;
   const observabilityAuth = providerObservabilityAuthPresentation(
-    activeQueryOwner?.kind === "vendor" ? activeQueryOwner.vendorId : provider?.productInfoId,
+    quotaQueryOwner?.kind === "vendor" ? quotaQueryOwner.vendorId : undefined,
     vendors,
-    activeQueryOwner?.surfaceId || providerViewModel?.primarySurfaceId(),
+    quotaQueryOwner?.surfaceId || providerViewModel?.primarySurfaceId(),
   );
+  const resolvedProductInfo = provider ? resolveProductInfo(providerProductInfoId(provider, vendors, surfaces), productInfos, vendors) : undefined;
   const showDedicatedObservabilityAuthentication = Boolean(observabilityAuth);
-
   const handleClose = () => {
     setView("details");
     setDeleteError("");
@@ -132,10 +144,13 @@ export function ProviderDetailsDialog({
           <ProviderDetailsView
             provider={provider}
             authenticationKind={authenticationKind}
-            vendorIconUrl={vendors.find((v) => v.vendor?.vendorId === provider.productInfoId)?.vendor?.iconUrl}
+            displayName={resolvedProductInfo?.displayName || providerViewModel?.displayName() || ""}
+            iconUrl={resolvedProductInfo?.iconUrl}
 
-            supportsActiveQuery={supportsActiveQuery}
-            isProbingActiveQuery={probingProviderId === provider.providerId}
+            supportsModelCatalogProbe={supportsModelCatalogProbe}
+            supportsQuotaQuery={supportsQuotaQuery}
+            isProbingModelCatalog={probingModelCatalogProviderId === provider.providerId}
+            isProbingQuotaQuery={probingProviderId === provider.providerId}
             deleteError={deleteError}
             isDeleting={isDeleting}
             observabilityAuthenticationActionLabel={observabilityAuth?.providerActionLabel}
@@ -144,7 +159,8 @@ export function ProviderDetailsDialog({
             onStartRename={handleStartRename}
             onStartAuthentication={handleStartAuthentication}
             onStartObservabilityAuthentication={handleStartObservabilityAuthentication}
-            onProbeActiveQuery={() => onProbeActiveQuery(provider)}
+            onProbeModelCatalog={() => onProbeModelCatalog(provider)}
+            onProbeQuotaQuery={() => onProbeQuotaQuery(provider)}
             showObservabilityAuthenticationAction={showDedicatedObservabilityAuthentication}
           />
         ) : null}
@@ -165,7 +181,8 @@ export function ProviderDetailsDialog({
           <ProviderAuthenticationView
             provider={provider}
             authenticationKind={authenticationKind}
-            cliId={providerSurfaceRuntimeCLIID(providerViewModel.primarySurface()?.runtime)}
+            apiKeyLabel={resolvedProductInfo?.displayName || providerViewModel.displayName()}
+            cliId={cliIdForSurface(surfaces, provider.surfaceId)}
             onSuccess={() => {
               setView("details");
               onUpdated?.();

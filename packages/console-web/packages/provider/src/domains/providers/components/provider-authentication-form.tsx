@@ -13,7 +13,7 @@ import { ProviderAuthenticationOAuthForm } from "./provider-authentication-oauth
 
 type Props = {
   providerId: string;
-  vendorId?: string;
+  apiKeyLabel?: string;
   cliId?: string;
   kind: ProviderAuthenticationKind;
   onSuccess: () => Promise<void> | void;
@@ -26,7 +26,7 @@ type FormValues = {
 
 export function ProviderAuthenticationForm({
   providerId,
-  vendorId,
+  apiKeyLabel,
   cliId,
   kind,
   onSuccess,
@@ -47,8 +47,8 @@ export function ProviderAuthenticationForm({
   );
   const callbackDelivery = cli?.oauth?.codeFlow?.callbackDelivery;
   const model = useMemo(
-    () => providerAuthenticationModel({ providerId, vendorId, kind }),
-    [kind, providerId, vendorId]
+    () => providerAuthenticationModel({ providerId, apiKeyLabel, kind }),
+    [apiKeyLabel, kind, providerId]
   );
 
   const { session, error: sessionError, isLoading: isSessionLoading, mutate: mutateSession } = useProviderConnectSession(localSessionId || undefined);

@@ -1,8 +1,9 @@
 import type { ModelVersion } from "@code-code/agent-contract/model/v1";
 import type { ModelRegistryEntry } from "@code-code/agent-contract/platform/model/v1";
-import type { VendorView } from "@code-code/agent-contract/platform/provider/v1";
 import type { CSSProperties } from "react";
 import { memo, useCallback, useMemo, useState } from "react";
+import type { ProductInfo } from "@code-code/agent-contract/product-info/v1";
+import type { Vendor } from "@code-code/agent-contract/platform/support/v1";
 import { Box, Button, Card, Code, Flex, Grid, Text } from "@radix-ui/themes";
 import { NoDataCallout, SoftBadge } from "@code-code/console-web-ui";
 import { formatSourcePricing } from "../source-pricing";
@@ -16,16 +17,19 @@ import { ModelDetailsDialog } from "./model-details-dialog";
 import { modelServiceLabelViews } from "./model-service-labels";
 import { SourceBadge } from "./source-badge";
 import { VendorAvatar } from "./vendor-avatar";
+import { resolveProductInfo } from "../../providers/provider-product-info";
 
 type ModelCardListProps = {
   models: ModelRegistryEntry[];
   selectedSourceIds: string[];
-  vendorsById: Record<string, VendorView>;
+  vendorsById: Record<string, Vendor>;
+  productInfos?: ProductInfo[];
+  supportVendors?: Vendor[];
   hasActiveFilters?: boolean;
   onClearFilters?: () => void;
 };
 
-export function ModelCardList({ models, selectedSourceIds, vendorsById, hasActiveFilters, onClearFilters }: ModelCardListProps) {
+export function ModelCardList({ models, selectedSourceIds, vendorsById, productInfos, supportVendors, hasActiveFilters, onClearFilters }: ModelCardListProps) {
   const [selectedModel, setSelectedModel] = useState<ModelRegistryEntry | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -61,6 +65,8 @@ export function ModelCardList({ models, selectedSourceIds, vendorsById, hasActiv
             onOpen={openModel}
             selectedSourceIds={selectedSourceIds}
             vendorsById={vendorsById}
+            productInfos={productInfos}
+            supportVendors={supportVendors}
           />
         ))}
       </Grid>
@@ -80,14 +86,17 @@ type ModelCardProps = {
   model: ModelRegistryEntry;
   onOpen: (model: ModelRegistryEntry) => void;
   selectedSourceIds: string[];
-  vendorsById: Record<string, VendorView>;
+  vendorsById: Record<string, Vendor>;
+  productInfos?: ProductInfo[];
+  supportVendors?: Vendor[];
 };
 
-const ModelCard = memo(function ModelCard({ model, onOpen, selectedSourceIds, vendorsById }: ModelCardProps) {
+const ModelCard = memo(function ModelCard({ model, onOpen, selectedSourceIds, vendorsById, productInfos, supportVendors }: ModelCardProps) {
   const definition = model.definition;
   if (!definition) return null;
   const vendor = vendorsById[vendorLookupKey(definition.vendorId)];
-  const vendorLabel = vendor?.displayName || getVendorLabel(definition);
+  const resolvedProductInfo = resolveProductInfo(definition.vendorId, productInfos, supportVendors);
+  const vendorLabel = resolvedProductInfo?.displayName || vendor?.vendor?.displayName || getVendorLabel(definition);
   const displayName = definition.displayName || definition.modelId;
   const showSeparateModelId = definition.displayName && definition.displayName !== definition.modelId;
   const pricingSummary = formatSourcePricing(model.pricing);
@@ -116,7 +125,7 @@ const ModelCard = memo(function ModelCard({ model, onOpen, selectedSourceIds, ve
       >
         <Flex direction="column" gap="2">
           <Flex align="center" gap="1" style={{ minWidth: 0 }}>
-            <VendorAvatar displayName={vendorLabel} iconUrl={vendor?.iconUrl} size="1" />
+            <VendorAvatar displayName={vendorLabel} iconUrl={resolvedProductInfo?.iconUrl} size="1" />
             <Text color="gray" size="1" truncate>{vendorLabel}</Text>
             <SourceBadge badges={model.badges} />
             <LifecycleBadge status={definition.lifecycleStatus} />
@@ -183,6 +192,7 @@ function modelRowKey(row: ModelRegistryEntry) {
 
 const cardButtonStyle: CSSProperties = {
   appearance: "none",
+  background: "none",
   border: 0,
   color: "inherit",
   cursor: "pointer",

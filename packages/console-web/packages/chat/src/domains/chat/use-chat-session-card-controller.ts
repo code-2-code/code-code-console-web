@@ -12,7 +12,7 @@ import { buildChatSetupRequest, isChatSetupReady, readCanSendChatRun } from "./c
 import { importInlineSetupFromProfile } from "./profile-import";
 import { parseProjectionState, type ChatProjectionState } from "./projection";
 import { runtimePrimaryModelId } from "./runtime-model-selector";
-import { runtimeRefKey } from "./session-runtime-options";
+import { runtimeConfigSelectionKey } from "./session-runtime-options";
 import { EMPTY_SESSION_RUNTIME_OPTIONS, normalizeInlineDraftWithSessionRuntimeOptions } from "./session-runtime-options";
 import { readDefaultProfileSelection, readLoadedChatSessionState } from "./chat-session-view-sync";
 import { cloneInlineSetup, hasPendingSetupChange, sameInlineSetup, type ChatInlineSetup, type ChatListItem, type ChatMessage, type ChatMode, type ChatSetupRequest, type ChatView } from "./types";
@@ -123,8 +123,8 @@ export function useChatSessionCardController(): ChatSessionCardController {
     if (mode === "profile") {
       return `profile:${profileId.trim()}`;
     }
-    return `inline:${inlineDraft?.providerId.trim()}:${inlineDraft?.executionClass.trim()}:${runtimeRefKey(inlineDraft?.runtimeConfig.providerRuntimeRef)}:${runtimePrimaryModelId(inlineDraft?.runtimeConfig.primaryModelSelector).trim()}`;
-  }, [bootstrapReady, inlineDraft?.executionClass, inlineDraft?.providerId, inlineDraft?.runtimeConfig.primaryModelSelector, inlineDraft?.runtimeConfig.providerRuntimeRef, mode, profileId]);
+    return `inline:${inlineDraft?.providerId.trim()}:${inlineDraft?.executionClass.trim()}:${runtimeConfigSelectionKey(inlineDraft?.runtimeConfig)}:${runtimePrimaryModelId(inlineDraft?.runtimeConfig.primaryModelSelector).trim()}`;
+  }, [bootstrapReady, inlineDraft?.executionClass, inlineDraft?.providerId, inlineDraft?.runtimeConfig, inlineDraft?.runtimeConfig.primaryModelSelector, mode, profileId]);
 
   useEffect(() => {
     latestSetupKey.current = setupKey;

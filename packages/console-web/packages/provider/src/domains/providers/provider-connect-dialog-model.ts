@@ -33,10 +33,10 @@ class DefaultProviderConnectDialogModel implements ProviderConnectDialogModel {
 
   copy() {
     switch (this.preferredOptionKind) {
-      case "vendorApiKey":
+      case "surfaceApiKey":
         return {
-          title: "Add Provider with Vendor API Key",
-          selectLabel: "Vendor",
+          title: "Add Provider with API Key",
+          selectLabel: "Provider",
         };
       case "customApiKey":
         return {
@@ -87,18 +87,16 @@ export function providerConnectDialogModel(
 }
 
 export function resolveProviderConnectOptionsError(
-  vendorError: unknown,
-  cliError: unknown,
+  errors: unknown[],
   hasError: boolean,
 ) {
   if (!hasError) {
     return undefined;
   }
-  if (vendorError instanceof Error) {
-    return vendorError;
-  }
-  if (cliError instanceof Error) {
-    return cliError;
+  for (const error of errors) {
+    if (error instanceof Error) {
+      return error;
+    }
   }
   return new Error("Failed to load provider connect options.");
 }

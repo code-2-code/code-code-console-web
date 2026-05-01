@@ -1,8 +1,10 @@
 import { create } from "@bufbuild/protobuf";
-import { ProviderRuntimeRefSchema, type ProviderRuntimeRef } from "@code-code/agent-contract/provider/v1";
+import { ProviderEndpointSchema, type ProviderEndpoint } from "@code-code/agent-contract/provider/v1";
 import {
   AgentSessionRuntimeConfigSchema,
   AgentSessionRuntimeFallbackCandidateSchema,
+  type AgentSessionRuntimeConfig,
+  type AgentSessionRuntimeFallbackCandidate,
 } from "@code-code/agent-contract/platform/agent-session/v1";
 import { createProviderFallbackModelSelector, createProviderModelSelector, runtimeFallbackModelId, runtimePrimaryModelId } from "./runtime-model-selector";
 import type { ChatInlineSetup } from "./types";
@@ -19,7 +21,8 @@ export type SessionRuntimeProviderOption = {
 };
 
 export type SessionRuntimeSurfaceOption = {
-  runtimeRef: ProviderRuntimeRef;
+  providerId: string;
+  endpoint?: ProviderEndpoint;
   label: string;
   models: string[];
 };
@@ -37,7 +40,7 @@ export function sessionRuntimeExecutionClassSelectItems(provider: SessionRuntime
 }
 
 export function sessionRuntimeSurfaceSelectItems(provider: SessionRuntimeProviderOption | null) {
-  return (provider?.surfaces || []).map((item) => ({ value: runtimeRefKey(item.runtimeRef), label: item.label }));
+  return (provider?.surfaces || []).map((item) => ({ value: runtimeSurfaceKey(item), label: item.label }));
 }
 
 export function sessionRuntimeModelSelectItems(surface: SessionRuntimeSurfaceOption | null) {
@@ -48,9 +51,9 @@ export function findSessionRuntimeProvider(options: SessionRuntimeOptions, provi
   return options.items.find((item) => item.providerId === providerId) ?? null;
 }
 
-export function findSessionRuntimeSurface(provider: SessionRuntimeProviderOption | null, runtimeRef: string | ProviderRuntimeRef | null | undefined) {
-  const key = typeof runtimeRef === "string" ? runtimeRef : runtimeRefKey(runtimeRef);
-  return provider?.surfaces.find((item) => runtimeRefKey(item.runtimeRef) === key) ?? null;
+export function findSessionRuntimeSurface(provider: SessionRuntimeProviderOption | null, selection: string | RuntimeSelection | null | undefined) {
+  const key = typeof selection === "string" ? selection : runtimeSelectionKey(selection?.providerId || "", selection?.endpoint);
+  return provider?.surfaces.find((item) => runtimeSurfaceKey(item) === key) ?? null;
 }
 
 export function normalizeInlineDraftWithSessionRuntimeOptions(draft: ChatInlineSetup, options: SessionRuntimeOptions): ChatInlineSetup {
@@ -59,7 +62,7 @@ export function normalizeInlineDraftWithSessionRuntimeOptions(draft: ChatInlineS
     return clearRuntimeSelection(draft);
   }
 
-  const primarySurface = resolveSurfaceOption(provider, draft.runtimeConfig.providerRuntimeRef);
+  const primarySurface = resolveSurfaceOption(provider, draft.runtimeConfig);
   const primaryModelId = resolveModelId(primarySurface, runtimePrimaryModelId(draft.runtimeConfig.primaryModelSelector));
 
   return {
@@ -68,9 +71,8 @@ export function normalizeInlineDraftWithSessionRuntimeOptions(draft: ChatInlineS
     executionClass: provider.executionClasses.includes(draft.executionClass) ? draft.executionClass : (provider.executionClasses[0] || ""),
     runtimeConfig: create(AgentSessionRuntimeConfigSchema, {
       ...draft.runtimeConfig,
-      providerRuntimeRef: primarySurface
-        ? cloneRuntimeRef(primarySurface.runtimeRef)
-        : undefined,
+      providerId: primarySurface?.providerId || "",
+      endpoint: primarySurface?.endpoint ? cloneProviderEndpoint(primarySurface.endpoint) : undefined,
       primaryModelSelector: primaryModelId ? createProviderModelSelector(primaryModelId) : undefined,
       fallbacks: draft.runtimeConfig.fallbacks
         .map((item) => normalizeFallbackCandidate(item, provider))
@@ -90,7 +92,8 @@ function clearRuntimeSelection(draft: ChatInlineSetup): ChatInlineSetup {
     executionClass: "",
     runtimeConfig: create(AgentSessionRuntimeConfigSchema, {
       ...draft.runtimeConfig,
-      providerRuntimeRef: undefined,
+      providerId: "",
+      endpoint: undefined,
       primaryModelSelector: undefined,
       fallbacks: [],
     }),
@@ -110,8 +113,8 @@ function resolveProviderOption(options: SessionRuntimeOptions, providerId: strin
   return usable[0] || null;
 }
 
-function resolveSurfaceOption(provider: SessionRuntimeProviderOption, runtimeRef: ProviderRuntimeRef | undefined) {
-  const key = runtimeRefKey(runtimeRef);
+function resolveSurfaceOption(provider: SessionRuntimeProviderOption, selection: RuntimeSelection | undefined) {
+  const key = runtimeSelectionKey(selection?.providerId || "", selection?.endpoint);
   if (!key) {
     return provider.surfaces[0] || null;
   }
@@ -133,32 +136,47 @@ function normalizeFallbackCandidate(
   item: ChatInlineSetup["runtimeConfig"]["fallbacks"][number],
   provider: SessionRuntimeProviderOption,
 ) {
-  const surface = resolveSurfaceOption(provider, item.providerRuntimeRef);
+  const surface = resolveSurfaceOption(provider, item);
   const modelId = resolveModelId(surface, runtimeFallbackModelId(item));
   if (!surface || !modelId) {
     return null;
   }
   return create(AgentSessionRuntimeFallbackCandidateSchema, {
     ...item,
-    providerRuntimeRef: cloneRuntimeRef(surface.runtimeRef),
+    providerId: surface.providerId,
+    endpoint: surface.endpoint ? cloneProviderEndpoint(surface.endpoint) : undefined,
     modelSelector: createProviderFallbackModelSelector(modelId),
   });
 }
 
-export function runtimeRefKey(ref: ProviderRuntimeRef | null | undefined) {
-  if (!ref) {
+type RuntimeSelection = {
+  providerId?: string;
+  endpoint?: ProviderEndpoint;
+};
+
+export function runtimeConfigSelectionKey(config: AgentSessionRuntimeConfig | null | undefined) {
+  return runtimeSelectionKey(config?.providerId || "", config?.endpoint);
+}
+
+export function runtimeFallbackSelectionKey(candidate: AgentSessionRuntimeFallbackCandidate | null | undefined) {
+  return runtimeSelectionKey(candidate?.providerId || "", candidate?.endpoint);
+}
+
+export function runtimeSurfaceKey(surface: SessionRuntimeSurfaceOption | null | undefined) {
+  return runtimeSelectionKey(surface?.providerId || "", surface?.endpoint);
+}
+
+function endpointKey(endpoint: ProviderEndpoint | null | undefined) {
+  if (!endpoint) {
     return "";
   }
-  const parts = [
-    ref.providerId?.trim() || "",
-    ref.surfaceId?.trim() || "",
-  ];
-  switch (ref.access.case) {
+  const parts: string[] = [];
+  switch (endpoint.shape.case) {
     case "api":
-      parts.push("api", String(ref.access.value.protocol || 0));
+      parts.push("api", String(endpoint.shape.value.protocol || 0), endpoint.shape.value.baseUrl?.trim() || "");
       break;
     case "cli":
-      parts.push("cli");
+      parts.push("cli", endpoint.shape.value.cliId?.trim() || "");
       break;
     default:
       parts.push("unspecified");
@@ -167,6 +185,14 @@ export function runtimeRefKey(ref: ProviderRuntimeRef | null | undefined) {
   return parts.join("\u0000");
 }
 
-export function cloneRuntimeRef(ref: ProviderRuntimeRef) {
-  return create(ProviderRuntimeRefSchema, ref);
+export function runtimeSelectionKey(providerId: string, endpoint: ProviderEndpoint | null | undefined) {
+  const key = endpointKey(endpoint);
+  if (!providerId.trim() || !key) {
+    return "";
+  }
+  return [providerId.trim(), key].join("\u0000");
+}
+
+export function cloneProviderEndpoint(endpoint: ProviderEndpoint) {
+  return create(ProviderEndpointSchema, endpoint);
 }

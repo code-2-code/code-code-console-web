@@ -47,9 +47,11 @@ describe("ModelDetailsSources", () => {
           row={row}
           vendorsById={{
             mistral: {
-              vendorId: "mistral",
-              displayName: "Mistral AI",
-              aliases: ["mistralai"],
+              vendor: {
+                vendorId: "mistral",
+                displayName: "Mistral AI",
+                aliases: ["mistralai"],
+              },
             },
           }}
         />

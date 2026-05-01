@@ -2,7 +2,8 @@ import { useMemo, type ReactNode } from "react";
 import { Box, Flex, Heading, Text } from "@radix-ui/themes";
 import { AsyncState } from "@code-code/console-web-ui";
 
-import type { CLI, Vendor } from "@code-code/agent-contract/platform/support/v1";
+import type { CLI, Surface, Vendor } from "@code-code/agent-contract/platform/support/v1";
+import type { ProductInfo } from "@code-code/agent-contract/product-info/v1";
 import type { ProviderView } from "@code-code/agent-contract/platform/management/v1";
 import { providerModel } from "../provider-model";
 import type { ProviderWorkflowStatusView } from "../provider-workflow-status-view";
@@ -13,7 +14,8 @@ const providerNameCollator = new Intl.Collator("en", { sensitivity: "base", nume
 export type ProviderCardGridProps = {
   providers: ProviderView[];
   clis: CLI[];
-
+  productInfos: ProductInfo[];
+  surfaces: Surface[];
   vendors: Vendor[];
   loading: boolean;
   error?: unknown;
@@ -33,12 +35,16 @@ export type ProviderCardGridProps = {
   readonly?: boolean;
   /** Per-provider workflow status map (keyed by providerId). */
   workflowStatuses?: Record<string, ProviderWorkflowStatusView>;
-  /** Provider ID currently being probed. */
+  /** Provider ID currently running a quota query probe. */
   probingProviderId?: string;
+  /** Provider ID currently running a model catalog probe. */
+  probingModelCatalogProviderId?: string;
   /** Called when a card is opened (ignored in readonly mode). */
   onOpen?: (provider: ProviderView) => void;
-  /** Called when the user requests an active query probe. */
-  onProbeActiveQuery?: (provider: ProviderView) => void;
+  /** Called when the user requests a quota query probe. */
+  onProbeQuotaQuery?: (provider: ProviderView) => void;
+  /** Called when the user requests a model catalog probe. */
+  onProbeModelCatalog?: (provider: ProviderView) => void;
   /** Called to retry loading on error. */
   onRetry?: () => void;
 };
@@ -46,7 +52,8 @@ export type ProviderCardGridProps = {
 export function ProviderCardGrid({
   providers,
   clis,
-
+  productInfos,
+  surfaces,
   vendors,
   loading,
   error,
@@ -58,8 +65,10 @@ export function ProviderCardGrid({
   readonly = false,
   workflowStatuses,
   probingProviderId,
+  probingModelCatalogProviderId,
   onOpen,
-  onProbeActiveQuery,
+  onProbeQuotaQuery,
+  onProbeModelCatalog,
   onRetry,
 }: ProviderCardGridProps) {
   const sortedProviders = useMemo(
@@ -104,14 +113,16 @@ export function ProviderCardGrid({
               key={provider.providerId || providerModel(provider).displayName()}
               provider={provider}
               clis={clis}
-
+              productInfos={productInfos}
+              surfaces={surfaces}
               vendors={vendors}
-              vendorIconUrl={vendors.find((v) => v.vendor?.vendorId === provider.productInfoId)?.vendor?.iconUrl}
               readonly={readonly}
               workflowStatus={workflowStatuses?.[provider.providerId]}
-              isProbingActiveQuery={probingProviderId === provider.providerId}
+              isProbingQuotaQuery={probingProviderId === provider.providerId}
+              isProbingModelCatalog={probingModelCatalogProviderId === provider.providerId}
               onOpen={onOpen}
-              onProbeActiveQuery={onProbeActiveQuery}
+              onProbeQuotaQuery={onProbeQuotaQuery}
+              onProbeModelCatalog={onProbeModelCatalog}
             />
           ))}
         </Box>

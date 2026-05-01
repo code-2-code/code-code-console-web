@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { readProviderActiveQueryStatus } from "./provider-active-query-status";
+import { readProviderQuotaQueryStatus } from "./provider-quota-query-status";
 import { providerOwnerObservabilityModel } from "./provider-owner-observability-model";
 
-describe("provider-active-query-status", () => {
+describe("provider-quota-query-status", () => {
   it("maps last probe outcome gauge to executed", () => {
-    const status = readProviderActiveQueryStatus(
+    const status = readProviderQuotaQueryStatus(
       providerOwnerObservabilityModel({
         owner: "vendor",
         vendorId: "cerebras",
@@ -24,7 +24,7 @@ describe("provider-active-query-status", () => {
   });
 
   it("maps last probe outcome gauge to auth blocked", () => {
-    const status = readProviderActiveQueryStatus(
+    const status = readProviderQuotaQueryStatus(
       providerOwnerObservabilityModel({
         owner: "vendor",
         vendorId: "cerebras",

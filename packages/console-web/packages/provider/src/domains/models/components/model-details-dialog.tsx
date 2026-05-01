@@ -1,4 +1,4 @@
-import type { VendorView } from "@code-code/agent-contract/platform/provider/v1";
+import type { Vendor } from "@code-code/agent-contract/platform/support/v1";
 import type { ModelRegistryEntry } from "@code-code/agent-contract/platform/model/v1";
 import type { ReactNode } from "react";
 import { Button, Dialog, Flex, ScrollArea, Text } from "@radix-ui/themes";
@@ -10,7 +10,7 @@ import { DialogCloseFooterActions } from "@code-code/console-web-ui";
 
 type ModelDetailsDialogProps = {
   row: ModelRegistryEntry;
-  vendorsById: Record<string, VendorView>;
+  vendorsById: Record<string, Vendor>;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   trigger?: ReactNode;

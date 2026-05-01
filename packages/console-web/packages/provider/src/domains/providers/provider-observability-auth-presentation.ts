@@ -1,12 +1,12 @@
 import {
-  ActiveQueryInputControl,
-  ActiveQueryInputPersistence,
-  ActiveQueryInputValueTransform,
-  type ActiveQueryInputField,
-  type ActiveQueryInputForm,
+  QuotaQueryInputControl,
+  QuotaQueryInputPersistence,
+  QuotaQueryInputValueTransform,
+  type QuotaQueryInputField,
+  type QuotaQueryInputForm,
 } from "@code-code/agent-contract/observability/v1";
 import type { Vendor } from "@code-code/agent-contract/platform/support/v1";
-import { findVendor } from "./provider-capability-lookup";
+import { findVendorSurfaceById } from "./provider-support-surface";
 
 export type ProviderObservabilityAuthField = {
   key: string;
@@ -17,9 +17,9 @@ export type ProviderObservabilityAuthField = {
   required?: boolean;
   sensitive?: boolean;
   multiline?: boolean;
-  persistence: ActiveQueryInputPersistence;
+  persistence: QuotaQueryInputPersistence;
   targetFieldId?: string;
-  transform: ActiveQueryInputValueTransform;
+  transform: QuotaQueryInputValueTransform;
 };
 
 export type ProviderObservabilityAuthPresentation = {
@@ -35,11 +35,11 @@ export type ProviderObservabilityAuthPresentation = {
 };
 
 export function providerObservabilityAuthPresentation(
-  vendorId?: string | null,
+  _vendorId?: string | null,
   vendors: Vendor[] = [],
   surfaceId?: string | null,
 ): ProviderObservabilityAuthPresentation | null {
-  const form = providerObservabilityInputForm(vendorId, vendors, surfaceId);
+  const form = providerObservabilityInputForm(vendors, surfaceId);
   if (!form) {
     return null;
   }
@@ -58,7 +58,7 @@ export function providerObservabilityAuthPresentation(
     placeholder: firstField.placeholder,
     schemaId: form.schemaId.trim(),
     requiredKeys: fields
-      .filter((field) => field.persistence === ActiveQueryInputPersistence.STORED_MATERIAL && field.required)
+      .filter((field) => field.persistence === QuotaQueryInputPersistence.STORED_MATERIAL && field.required)
       .map((field) => field.key),
     fields,
     separateProviderUpdate: true,
@@ -66,34 +66,26 @@ export function providerObservabilityAuthPresentation(
 }
 
 function providerObservabilityInputForm(
-  vendorId?: string | null,
   vendors: Vendor[] = [],
   surfaceId?: string | null,
-): ActiveQueryInputForm | null {
-  const vendor = findVendor(vendors, vendorId || "");
-  if (!vendor) {
+): QuotaQueryInputForm | null {
+  const surface = findVendorSurfaceById(vendors, surfaceId)?.surface;
+  if (!surface) {
     return null;
   }
-  const normalizedSurfaceId = surfaceId?.trim() || "";
-  for (const binding of vendor.providerBindings) {
-    const bindingSurfaceId = binding.providerBinding?.surfaceId?.trim() || "";
-    if (normalizedSurfaceId && bindingSurfaceId !== normalizedSurfaceId) {
+  for (const profile of surface.observability?.profiles || []) {
+    if (profile.collection.case !== "quotaQuery") {
       continue;
     }
-    for (const profile of binding.observability?.profiles || []) {
-      if (profile.collection.case !== "activeQuery") {
-        continue;
-      }
-      const form = profile.collection.value.inputForm;
-      if (form?.schemaId?.trim()) {
-        return form;
-      }
+    const form = profile.collection.value.inputForm;
+    if (form?.schemaId?.trim()) {
+      return form;
     }
   }
   return null;
 }
 
-function providerObservabilityAuthField(field: ActiveQueryInputField): ProviderObservabilityAuthField | null {
+function providerObservabilityAuthField(field: QuotaQueryInputField): ProviderObservabilityAuthField | null {
   const key = field.fieldId.trim();
   const label = field.label.trim();
   if (!key || !label) {
@@ -106,10 +98,10 @@ function providerObservabilityAuthField(field: ActiveQueryInputField): ProviderO
     placeholder: field.placeholder.trim(),
     defaultValue: field.defaultValue.trim() || undefined,
     required: field.required,
-    sensitive: field.sensitive || field.control === ActiveQueryInputControl.PASSWORD,
-    multiline: field.control === ActiveQueryInputControl.TEXTAREA,
+    sensitive: field.sensitive || field.control === QuotaQueryInputControl.PASSWORD,
+    multiline: field.control === QuotaQueryInputControl.TEXTAREA,
     persistence: field.persistence,
     targetFieldId: field.targetFieldId.trim() || undefined,
-    transform: field.transform || ActiveQueryInputValueTransform.IDENTITY,
+    transform: field.transform || QuotaQueryInputValueTransform.IDENTITY,
   };
 }

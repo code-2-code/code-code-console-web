@@ -1,7 +1,9 @@
 import type { AgentProfile } from "@code-code/agent-contract/platform/agent-profile/v1";
 import type { ProviderView } from "@code-code/agent-contract/platform/management/v1";
 import { ProviderPhase } from "@code-code/agent-contract/platform/provider/v1/shared";
-import type { VendorView } from "@code-code/agent-contract/platform/provider/v1";
+import type { ProductInfo } from "@code-code/agent-contract/product-info/v1";
+import type { ProviderEndpoint } from "@code-code/agent-contract/provider/v1";
+import type { Surface } from "@code-code/agent-contract/platform/support/v1";
 import type { AgentProfileDraft, CLIReference, FallbackAvailability, FallbackProviderOption, ProviderType, SelectionFallback, SessionRuntimeOptions } from "./types";
 import {
   PROVIDER_TYPE_ANTHROPIC,
@@ -41,7 +43,13 @@ export function cloneDraft(draft: AgentProfileDraft): AgentProfileDraft {
   };
 }
 
-export function agentProfileToDraft(profile: AgentProfile, providers: ProviderView[], vendors: VendorView[], sessionRuntimeOptions: SessionRuntimeOptions): AgentProfileDraft {
+export function agentProfileToDraft(
+  profile: AgentProfile,
+  providers: ProviderView[],
+  surfaces: Surface[],
+  productInfos: ProductInfo[],
+  sessionRuntimeOptions: SessionRuntimeOptions,
+): AgentProfileDraft {
   const providerId = profile.selectionStrategy?.providerId || "";
   return {
     profileId: profile.profileId,
@@ -49,7 +57,7 @@ export function agentProfileToDraft(profile: AgentProfile, providers: ProviderVi
     selectionStrategy: {
       cliId: providerId,
       executionClass: profile.selectionStrategy?.executionClass || defaultExecutionClass(sessionRuntimeOptions, providerId),
-      fallbackChain: (profile.selectionStrategy?.fallbacks || []).map((item) => fallbackFromMessage(item, providers, vendors))
+      fallbackChain: (profile.selectionStrategy?.fallbacks || []).map((item) => fallbackFromMessage(item, providers, surfaces, productInfos))
     },
     mcpIds: [...profile.mcpIds],
     skillIds: [...profile.skillIds],
@@ -65,7 +73,8 @@ export function draftToAgentProfileRequest(draft: AgentProfileDraft) {
       providerId: draft.selectionStrategy.cliId,
       executionClass: draft.selectionStrategy.executionClass,
       fallbacks: draft.selectionStrategy.fallbackChain.map((item) => ({
-        providerRuntimeRef: { surfaceId: item.providerId },
+        providerId: item.providerId,
+        endpoint: item.endpoint,
         modelSelector: { case: "providerModelId" as const, value: item.modelId }
       }))
     },
@@ -108,25 +117,27 @@ export function defaultExecutionClass(sessionRuntimeOptions: SessionRuntimeOptio
 
 export function buildFallbackProviderOptions(
   providers: ProviderView[],
-  vendors: VendorView[],
-  clis: CLIReference[],
+  surfaces: Surface[],
+  productInfos: ProductInfo[],
+  sessionRuntimeOptions: SessionRuntimeOptions,
   cliId: string,
   currentChain: SelectionFallback[]
 ) {
-  const allowedTypes = new Set((resolveCLI(cliId, clis)?.supportedProviderTypes || []).map(Number));
-  const vendorMap = new Map(vendors.map((item) => [item.vendorId, item]));
-  const selected = new Set(currentChain.map((item) => `${item.providerId}:${item.modelId}`));
+  const runtimeProvider = sessionRuntimeOptions.items.find((item) => item.providerId === cliId);
+  const providerMap = new Map(providers.map((item) => [item.providerId, item]));
+  const selected = new Set(currentChain.map((item) => fallbackKey(item.providerId, item.endpoint, item.modelId)));
   const groups = new Map<string, FallbackProviderOption>();
-  for (const surface of providers) {
-    const providerType = runtimeProtocol(surface);
-    if (!allowedTypes.has(providerType)) {
+  for (const runtimeSurface of runtimeProvider?.surfaces || []) {
+    const provider = providerMap.get(runtimeSurface.providerId);
+    if (!provider || !runtimeSurface.endpoint) {
       continue;
     }
-    const surfaceOption = toSurfaceOption(surface, selected);
+    const surfaceOption = toSurfaceOption(provider, runtimeSurface, selected);
     if (surfaceOption.models.length === 0) {
       continue;
     }
-    const groupID = `${surface.productInfoId}:${providerLabel(surface)}`;
+    const product = productInfoForProvider(provider, surfaces, productInfos);
+    const groupID = provider.providerId;
     const current = groups.get(groupID);
     if (current) {
       current.surfaces.push(surfaceOption);
@@ -134,10 +145,10 @@ export function buildFallbackProviderOptions(
     }
     groups.set(groupID, {
       id: groupID,
-      vendorId: surface.productInfoId || "",
-      label: providerLabel(surface),
-      iconUrl: vendorMap.get(surface.productInfoId || "")?.iconUrl || "",
-      vendorLabel: vendorMap.get(surface.productInfoId || "")?.displayName || surface.productInfoId || "Unknown",
+      productId: product.productId,
+      label: providerLabel(provider),
+      iconUrl: product.iconUrl,
+      productLabel: product.label,
       surfaces: [surfaceOption]
     });
   }
@@ -165,52 +176,97 @@ export function providerTypeLabel(providerType: ProviderType) {
   }
 }
 
-function fallbackFromMessage(item: AgentFallbackMessage, providers: ProviderView[], vendors: VendorView[]): SelectionFallback {
-  const surface = providers.find((current) => current.surfaceId === item.providerRuntimeRef?.surfaceId);
-  const vendor = vendors.find((current) => current.vendorId === surface?.productInfoId);
+function fallbackFromMessage(
+  item: AgentFallbackMessage,
+  providers: ProviderView[],
+  surfaces: Surface[],
+  productInfos: ProductInfo[],
+): SelectionFallback {
+  const provider = providers.find((current) => current.providerId === item.providerId);
+  const product = provider ? productInfoForProvider(provider, surfaces, productInfos) : emptyProductInfo();
   const modelId = item.modelSelector.case === "providerModelId" ? item.modelSelector.value : item.modelSelector.value?.modelId || "";
+  const providerId = item.providerId || "missing";
   return {
-    id: `${item.providerRuntimeRef?.surfaceId || "missing"}:${modelId}`,
-    providerId: item.providerRuntimeRef?.surfaceId || "",
-    vendorId: surface?.productInfoId || "",
-    vendorLabel: vendor?.displayName || surface?.productInfoId || "Unknown",
-    providerLabel: surface ? providerLabel(surface) : item.providerRuntimeRef?.surfaceId || "Missing provider",
-    providerIconUrl: vendor?.iconUrl || "",
-    providerType: runtimeProtocol(surface),
-    surfaceLabel: surface ? surfaceLabel(surface) : "Missing surface",
+    id: fallbackKey(providerId, item.endpoint, modelId),
+    providerId,
+    endpoint: item.endpoint,
+    productId: product.productId,
+    productLabel: product.label,
+    providerLabel: provider ? providerLabel(provider) : providerId,
+    providerIconUrl: product.iconUrl,
+    providerType: endpointProtocol(item.endpoint),
+    surfaceLabel: endpointLabel(item.endpoint, provider?.displayName || providerId),
     modelId,
-    availability: availabilityFromPhase(surface?.status?.phase)
+    availability: availabilityFromPhase(provider?.status?.phase)
   };
 }
 
-function toSurfaceOption(surface: ProviderView, selected: Set<string>) {
-  const availability = availabilityFromPhase(surface.status?.phase);
-  const models = Array.from(new Set(modelsForSurface(surface)))
-    .filter((modelId) => !selected.has(`${surface.surfaceId}:${modelId}`))
-    .map((modelId) => ({ id: `${surface.surfaceId}:${modelId}`, modelId, availability }));
+function toSurfaceOption(
+  provider: ProviderView,
+  runtimeSurface: NonNullable<SessionRuntimeOptions["items"][number]["surfaces"]>[number],
+  selected: Set<string>,
+) {
+  const availability = availabilityFromPhase(provider.status?.phase);
+  const endpoint = runtimeSurface.endpoint;
+  const models = Array.from(new Set(runtimeSurface.models))
+    .filter((modelId) => !selected.has(fallbackKey(runtimeSurface.providerId, endpoint, modelId)))
+    .map((modelId) => ({ id: fallbackKey(runtimeSurface.providerId, endpoint, modelId), modelId, availability }));
   return {
-    providerId: surface.surfaceId,
-    label: surfaceLabel(surface),
-    providerType: runtimeProtocol(surface),
+    id: `${runtimeSurface.providerId}:${endpointKey(endpoint)}`,
+    providerId: runtimeSurface.providerId,
+    endpoint,
+    label: runtimeSurface.label || endpointLabel(endpoint, providerLabel(provider)),
+    providerType: endpointProtocol(endpoint),
     availability,
     models
   };
 }
 
-function modelsForSurface(surface: ProviderView) {
-  return (surface.runtime?.catalog?.models || []).map((item) => item.providerModelId || item.modelRef?.modelId || "").filter(Boolean);
+function providerLabel(provider: ProviderView) {
+  return provider.displayName || provider.providerId;
 }
 
-function providerLabel(surface: ProviderView) {
-  return surface.displayName || surface.surfaceId;
+function productInfoForProvider(provider: ProviderView, surfaces: Surface[], productInfos: ProductInfo[]) {
+  const surface = surfaces.find((item) => item.surfaceId === provider.surfaceId);
+  const productId = surface?.productInfoId || "";
+  const productInfo = productInfos.find((item) => item.id === productId);
+  return {
+    productId,
+    label: productInfo?.displayName || productId || "Unknown product",
+    iconUrl: productInfo?.iconUrl || "",
+  };
 }
 
-function surfaceLabel(surface: ProviderView) {
-  return surface.runtime?.displayName || surface.displayName || surface.surfaceId;
+function emptyProductInfo() {
+  return { productId: "", label: "Unknown product", iconUrl: "" };
 }
 
-function runtimeProtocol(surface: ProviderView | undefined) {
-  return Number(surface?.runtime?.access.case === "api" ? surface.runtime.access.value.protocol : 0);
+function endpointProtocol(endpoint: ProviderEndpoint | undefined): ProviderType {
+  return Number(endpoint?.shape.case === "api" ? endpoint.shape.value.protocol : 0);
+}
+
+function endpointLabel(endpoint: ProviderEndpoint | undefined, fallback: string) {
+  if (endpoint?.shape.case === "api") {
+    return providerTypeLabel(Number(endpoint.shape.value.protocol));
+  }
+  if (endpoint?.shape.case === "cli") {
+    return endpoint.shape.value.cliId || fallback;
+  }
+  return fallback;
+}
+
+function fallbackKey(providerId: string, endpoint: ProviderEndpoint | undefined, modelId: string) {
+  return `${providerId}:${endpointKey(endpoint)}:${modelId}`;
+}
+
+function endpointKey(endpoint: ProviderEndpoint | undefined) {
+  if (endpoint?.shape.case === "api") {
+    return `api:${endpoint.shape.value.protocol}:${endpoint.shape.value.baseUrl}`;
+  }
+  if (endpoint?.shape.case === "cli") {
+    return `cli:${endpoint.shape.value.cliId}`;
+  }
+  return "endpoint:missing";
 }
 
 function availabilityFromPhase(phase?: ProviderPhase): FallbackAvailability {

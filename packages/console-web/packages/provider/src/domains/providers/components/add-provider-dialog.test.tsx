@@ -18,6 +18,20 @@ vi.mock("@code-code/console-web-credential", () => ({
     error: undefined,
     mutate: vi.fn(),
   }),
+  useProductInfos: () => ({
+    productInfos: [],
+    isLoading: false,
+    isError: false,
+    error: undefined,
+    mutate: vi.fn(),
+  }),
+  useProviderSurfaces: () => ({
+    surfaces: [],
+    isLoading: false,
+    isError: false,
+    error: undefined,
+    mutate: vi.fn(),
+  }),
   useProviderVendors: () => ({
     vendors: [],
     isLoading: false,

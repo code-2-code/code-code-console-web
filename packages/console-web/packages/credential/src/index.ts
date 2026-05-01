@@ -22,6 +22,7 @@ export {
   useProviderVendors,
   useProviderCLIs,
   useProviderSurfaces,
+  useProductInfos,
   listManualCredentialVendorOptions,
   listOAuthCLIs,
 } from "./domains/credentials/reference-data";

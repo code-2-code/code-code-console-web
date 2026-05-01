@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ProviderSurfaceRuntime } from "@code-code/agent-contract/provider/v1";
+import { ProviderEndpointType, type ProviderEndpoint } from "@code-code/agent-contract/provider/v1";
 import type { ProviderView } from "@code-code/agent-contract/platform/management/v1";
 import { ProviderPhase } from "@code-code/agent-contract/platform/provider/v1/shared";
 import { ProviderProtocol, type ProviderProtocolValue } from "./provider-protocol";
@@ -12,15 +12,13 @@ describe("provider-model", () => {
       providerId: "provider-openai",
       displayName: "OpenAI",
       providerCredentialId: "cred-openai",
-      modelCatalog: {
-        models: [
-          { providerModelId: "gpt-4.1" },
-          { providerModelId: "gpt-4.1-mini" },
-          { providerModelId: "o4-mini" },
-        ],
-      },
+      models: [
+        { providerModelId: "gpt-4.1" },
+        { providerModelId: "gpt-4.1-mini" },
+        { providerModelId: "o4-mini" },
+      ],
       surfaceId: "surface-a",
-      runtime: apiRuntime(ProviderProtocol.OPENAI_RESPONSES, "", "Responses API"),
+      endpoints: [apiEndpoint(ProviderProtocol.OPENAI_RESPONSES)],
       status: {
         phase: ProviderPhase.REFRESHING,
       },
@@ -40,6 +38,8 @@ describe("provider-model", () => {
       providerId: "provider-openai",
       displayName: "OpenAI",
       surfaceId: "surface-a",
+      endpoints: [],
+      models: [],
       status: {
         phase: ProviderPhase.READY,
         reason: "Provider surface configuration is valid.",
@@ -57,7 +57,8 @@ describe("provider-model", () => {
     registerDefaultProviderProtocolPresentations();
     const model = providerModel(provider({
       surfaceId: "surface-a",
-      runtime: apiRuntime(ProviderProtocol.OPENAI_COMPATIBLE, "https://api.example.com/v1"),
+      endpoints: [apiEndpoint(ProviderProtocol.OPENAI_COMPATIBLE, "https://api.example.com/v1")],
+      models: [],
     }));
 
     expect(model.protocolLabels()).toEqual(["OpenAI Compatible"]);
@@ -66,31 +67,32 @@ describe("provider-model", () => {
   it("does not render synthetic api details for cli oauth cards", () => {
     const model = providerModel(provider({
       surfaceId: "surface-cli",
-      runtime: cliRuntime("codex", "Codex"),
+      endpoints: [cliEndpoint("codex")],
+      models: [],
     }));
 
     expect(model.protocolLabels()).toEqual([]);
   });
 });
 
-function apiRuntime(protocol: ProviderProtocolValue, baseUrl = "", displayName = ""): ProviderSurfaceRuntime {
+function apiEndpoint(protocol: ProviderProtocolValue, baseUrl = ""): ProviderEndpoint {
   return {
-    displayName,
-    access: {
+    type: ProviderEndpointType.API,
+    shape: {
       case: "api",
       value: { protocol, baseUrl },
     },
-  } as ProviderSurfaceRuntime;
+  } as ProviderEndpoint;
 }
 
-function cliRuntime(cliId: string, displayName = ""): ProviderSurfaceRuntime {
+function cliEndpoint(cliId: string): ProviderEndpoint {
   return {
-    displayName,
-    access: {
+    type: ProviderEndpointType.CLI,
+    shape: {
       case: "cli",
       value: { cliId },
     },
-  } as ProviderSurfaceRuntime;
+  } as ProviderEndpoint;
 }
 
 function provider(providerView: Partial<ProviderView>): ProviderView {

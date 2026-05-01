@@ -1,13 +1,15 @@
 import type { ProviderProtocolValue } from "./provider-protocol";
 import type { ModelRef } from "@code-code/agent-contract/model/v1";
 
-export type ConnectProviderWithVendorAPIKeyDraft = {
-  vendorId: string;
+export type ConnectProviderWithSurfaceAPIKeyDraft = {
+  surfaceId: string;
   displayName?: string;
   apiKey: string;
+  baseUrl?: string;
 };
 
 export type ConnectProviderWithCustomAPIKeyDraft = {
+  surfaceId: string;
   displayName?: string;
   apiKey: string;
   baseUrl: string;
@@ -15,7 +17,7 @@ export type ConnectProviderWithCustomAPIKeyDraft = {
 };
 
 export type ConnectProviderWithOAuthDraft = {
-  cliId: string;
+  surfaceId: string;
   displayName?: string;
 };
 
@@ -27,6 +29,22 @@ export type ProviderModelRegistryBindingDraft = {
 export type ProviderModelRegistryResolution = {
   providerModelIds: string[];
   modelRefByProviderModelId: Record<string, ModelRef>;
+};
+
+export type CredentialSubjectSummaryField = {
+  fieldId?: string;
+  label?: string;
+  value?: string;
+};
+
+export type CredentialSubjectSummary = {
+  credentialId?: string;
+  fields?: CredentialSubjectSummaryField[];
+};
+
+export type ProviderAuthenticationSummary = {
+  provider?: CredentialSubjectSummary;
+  observability?: CredentialSubjectSummary;
 };
 
 export type ProviderObservabilityWindow = "5m" | "15m" | "1h" | "6h" | "24h";
@@ -76,7 +94,7 @@ export type ProviderObservability = {
 
 export type ProviderObservabilityProbeAllResponse = {
   triggeredCount?: number;
-  workflowId?: string;
+  probeId?: string;
   message?: string;
   results?: Array<{
     providerId?: string;

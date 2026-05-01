@@ -1,14 +1,11 @@
-import type { VendorView } from "@code-code/agent-contract/platform/provider/v1";
+import type { Vendor } from "@code-code/agent-contract/platform/support/v1";
 import { Badge, Button, Flex, Text } from "@radix-ui/themes";
 import { CloseIcon } from "@code-code/console-web-ui";
-import type { ModelAvailabilityFilter } from "../use-model-registry-state";
 import { vendorLookupKey } from "../vendor-index";
 import { CATEGORY_OPTIONS } from "./model-detail-formatters";
 import { sourceOptionLabel } from "./model-table-filter-options";
 
 type ModelActiveFiltersProps = {
-  availabilityFilter: ModelAvailabilityFilter;
-  onAvailabilityClear: () => void;
   onCategoryClear: () => void;
   onClearAll: () => void;
   onModelQueryClear: () => void;
@@ -18,12 +15,10 @@ type ModelActiveFiltersProps = {
   selectedCategory: string;
   sourceIds: string[];
   vendorIds: string[];
-  vendorsById: Record<string, VendorView>;
+  vendorsById: Record<string, Vendor>;
 };
 
 export function ModelActiveFilters({
-  availabilityFilter,
-  onAvailabilityClear,
   onCategoryClear,
   onClearAll,
   onModelQueryClear,
@@ -37,7 +32,7 @@ export function ModelActiveFilters({
 }: ModelActiveFiltersProps) {
   const normalizedQuery = modelQuery.trim();
   const categoryLabel = categoryOptionLabel(selectedCategory);
-  const hasFilters = vendorIds.length > 0 || sourceIds.length > 0 || availabilityFilter !== "" || selectedCategory !== "" || normalizedQuery !== "";
+  const hasFilters = vendorIds.length > 0 || sourceIds.length > 0 || selectedCategory !== "" || normalizedQuery !== "";
   if (!hasFilters) return null;
 
   return (
@@ -50,7 +45,7 @@ export function ModelActiveFilters({
         <FilterChip label={`Category: ${categoryLabel}`} onRemove={onCategoryClear} />
       ) : null}
       {vendorIds.map((id) => {
-        const label = vendorsById[vendorLookupKey(id)]?.displayName || id;
+        const label = vendorsById[vendorLookupKey(id)]?.vendor?.displayName || id;
         return (
           <FilterChip key={id} label={label} onRemove={() => onVendorRemove(id)} />
         );
@@ -58,9 +53,6 @@ export function ModelActiveFilters({
       {sourceIds.map((id) => (
         <FilterChip key={id} label={sourceOptionLabel(id)} onRemove={() => onSourceRemove(id)} />
       ))}
-      {availabilityFilter !== "" ? (
-        <FilterChip label="Free" onRemove={onAvailabilityClear} />
-      ) : null}
       <Button color="gray" size="1" variant="ghost" onClick={onClearAll}>
         Clear all
       </Button>

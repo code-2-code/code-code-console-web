@@ -5,7 +5,7 @@ import {
   sessionRuntimeSurfaceSelectItems,
   sessionRuntimeModelSelectItems,
   findSessionRuntimeSurface,
-  runtimeRefKey,
+  runtimeFallbackSelectionKey,
   type SessionRuntimeProviderOption,
 } from "../session-runtime-options";
 import type { ChatInlineSetup } from "../types";
@@ -42,7 +42,7 @@ export function ChatInlineRuntimeFallbackEditor({
       </Flex>
       <RuntimeFallbackList
         items={items}
-        rowKey={(item, index) => `${runtimeRefKey(item.providerRuntimeRef) || "fallback"}-${index}`}
+        rowKey={(item, index) => `${runtimeFallbackSelectionKey(item) || "fallback"}-${index}`}
         emptyText="No fallback candidates yet."
         emptyClassName="chatInlineRuntimeEmpty"
         onRemove={onFallbackRemove}
@@ -59,7 +59,7 @@ export function ChatInlineRuntimeFallbackEditor({
               className="chatField"
               labelClassName="chatFieldLabel"
               triggerClassName="chatFieldTrigger"
-              value={runtimeRefKey(item.providerRuntimeRef)}
+              value={runtimeFallbackSelectionKey(item)}
               disabled={disabled || !provider}
               items={sessionRuntimeSurfaceSelectItems(provider)}
               onValueChange={(value) => onFallbackSurfaceChange(index, value)}
@@ -70,8 +70,8 @@ export function ChatInlineRuntimeFallbackEditor({
               labelClassName="chatFieldLabel"
               triggerClassName="chatFieldTrigger"
               value={runtimeFallbackModelId(item)}
-              disabled={disabled || !findSessionRuntimeSurface(provider, item.providerRuntimeRef)}
-              items={sessionRuntimeModelSelectItems(findSessionRuntimeSurface(provider, item.providerRuntimeRef))}
+              disabled={disabled || !findSessionRuntimeSurface(provider, item)}
+              items={sessionRuntimeModelSelectItems(findSessionRuntimeSurface(provider, item))}
               placeholder="Select model"
               onValueChange={(value) => onFallbackModelChange(index, value)}
             />

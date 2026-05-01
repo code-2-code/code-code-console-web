@@ -3,6 +3,7 @@ import type { UseFormReturn } from "react-hook-form";
 import { FormSelectField, FormTextField } from "@code-code/console-web-ui";
 import { isCustomAPIKeyConnectOption, type ProviderConnectOption } from "../provider-connect-options";
 import { type ProviderConnectProtocolOption, type ProviderConnectFormValues } from "../provider-connect-form-model";
+import { surfaceBaseURLTemplateParameters } from "../provider-surface-template";
 
 type Props = {
   selectedOption?: ProviderConnectOption;
@@ -11,6 +12,10 @@ type Props = {
 };
 
 export function ProviderConnectAPIKeyFields({ selectedOption, methods, protocolOptions }: Props) {
+  const surfaceTemplateFields = selectedOption?.kind === "surfaceApiKey"
+    ? surfaceBaseURLTemplateParameters(selectedOption.prefilledSurfaces[0]?.baseUrl || "")
+    : [];
+
   return (
     <>
       <FormTextField
@@ -23,6 +28,24 @@ export function ProviderConnectAPIKeyFields({ selectedOption, methods, protocolO
         placeholder="sk-…"
         inputProps={methods.register("apiKey", { required: "API key is required" })}
       />
+
+      {selectedOption?.kind === "surfaceApiKey" ? (
+        <>
+          {surfaceTemplateFields.map((field) => (
+            <FormTextField
+              key={`provider-connect-surface-param:${field}`}
+              label={formatSurfaceFieldLabel(field)}
+              htmlFor={`provider-connect-surface-param-${field}`}
+              error={methods.formState.errors.surfaceParameters?.[field]?.message}
+              id={`provider-connect-surface-param-${field}`}
+              placeholder={`Enter ${field}`}
+              inputProps={methods.register(`surfaceParameters.${field}` as const, {
+                validate: (value) => value.trim() ? true : `${formatSurfaceFieldLabel(field)} is required`,
+              })}
+            />
+          ))}
+        </>
+      ) : null}
 
       {isCustomAPIKeyConnectOption(selectedOption) ? (
         <>
@@ -53,4 +76,11 @@ export function ProviderConnectAPIKeyFields({ selectedOption, methods, protocolO
       ) : null}
     </>
   );
+}
+
+function formatSurfaceFieldLabel(field: string) {
+  return field
+    .split("_")
+    .map((part) => part ? part[0].toUpperCase() + part.slice(1) : part)
+    .join(" ");
 }

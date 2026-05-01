@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { create, toJson } from "@bufbuild/protobuf";
 import { AgentResourcesSchema } from "@code-code/agent-contract/agent/v1/cap";
+import { Protocol } from "@code-code/agent-contract/api-protocol/v1";
+import { ProviderEndpointType } from "@code-code/agent-contract/provider/v1";
 import { AgentSessionRuntimeConfigSchema } from "@code-code/agent-contract/platform/agent-session/v1";
 import { AgentSessionActionStateSchema } from "@code-code/agent-contract/platform/agent-session-action/v1";
 import { createChat, getChatOrNull, listChatMessages, listSessionRuntimeOptions, listChats, putChat, renameChat, resetChatWarmState } from "./api";
@@ -61,7 +63,8 @@ describe("chat api", () => {
             executionClass: "cli-standard",
             editable: true,
             runtimeConfig: toJson(AgentSessionRuntimeConfigSchema, create(AgentSessionRuntimeConfigSchema, {
-              providerRuntimeRef: { surfaceId: "openai-default" },
+              providerId: "openai-default",
+              endpoint: apiEndpoint("openai-default"),
               primaryModelSelector: { selector: { case: "providerModelId", value: "gpt-5" } },
             })),
             resourceConfig: toJson(AgentResourcesSchema, create(AgentResourcesSchema, {
@@ -82,7 +85,8 @@ describe("chat api", () => {
         providerId: "codex",
         executionClass: "cli-standard",
         runtimeConfig: create(AgentSessionRuntimeConfigSchema, {
-          providerRuntimeRef: { surfaceId: "openai-default" },
+          providerId: "openai-default",
+          endpoint: apiEndpoint("openai-default"),
           primaryModelSelector: { selector: { case: "providerModelId", value: "gpt-5" } },
         }),
         resourceConfig: create(AgentResourcesSchema, {
@@ -93,7 +97,7 @@ describe("chat api", () => {
 
     expect(chat.session.sessionSetup.mode).toBe("inline");
     expect(chat.session.sessionSetup.providerId).toBe("codex");
-    expect(chat.session.sessionSetup.runtimeConfig?.providerRuntimeRef?.surfaceId).toBe("openai-default");
+    expect(chat.session.sessionSetup.runtimeConfig?.providerId).toBe("openai-default");
 
     const request = vi.mocked(fetch).mock.calls[0]?.[1] as RequestInit;
     expect(vi.mocked(fetch).mock.calls[0]?.[0]).toBe("/api/chats/chat-1");
@@ -234,10 +238,13 @@ describe("chat api", () => {
           label: "Codex",
           executionClasses: ["cli-standard", "cli-long-context"],
           surfaces: [{
-            runtimeRef: {
-              providerId: "provider",
-              surfaceId: "openai-default",
-              api: { protocol: "PROTOCOL_OPENAI_COMPATIBLE" },
+            providerId: "openai-default",
+            endpoint: {
+              type: "PROVIDER_ENDPOINT_TYPE_API",
+              api: {
+                baseUrl: "https://openai-default.test/v1",
+                protocol: "PROTOCOL_OPENAI_COMPATIBLE",
+              },
             },
             label: "OpenAI Default",
             models: ["gpt-5", "gpt-5-mini"],
@@ -257,3 +264,16 @@ describe("chat api", () => {
     expect(vi.mocked(fetch).mock.calls[0]?.[0]).toBe("/api/chats/session-runtime-options");
   });
 });
+
+function apiEndpoint(id: string) {
+  return {
+    type: ProviderEndpointType.API,
+    shape: {
+      case: "api" as const,
+      value: {
+        baseUrl: `https://${id}.test/v1`,
+        protocol: Protocol.OPENAI_COMPATIBLE,
+      },
+    },
+  };
+}

@@ -23,7 +23,7 @@ type FallbackPickerModel = {
 
 export function useFallbackPickerModel(items: FallbackProviderOption[]): FallbackPickerModel {
   const providerOptions = useMemo(
-    () => items.map((item) => ({ value: item.id, label: `${item.label} · ${item.vendorLabel}` })),
+    () => items.map((item) => ({ value: item.id, label: `${item.label} · ${item.productLabel}` })),
     [items],
   );
   const [providerValue, setProviderValue] = useState("");
@@ -35,8 +35,8 @@ export function useFallbackPickerModel(items: FallbackProviderOption[]): Fallbac
 
   const surfaceOptions = useMemo(
     () => (selectedProvider?.surfaces || []).map((item) => ({
-      value: item.providerId,
-      label: `${item.label} · ${providerTypeLabel(item.providerType)}`,
+      value: item.id,
+      label: surfaceOptionLabel(item.label, item.providerType),
     })),
     [selectedProvider],
   );
@@ -63,8 +63,9 @@ export function useFallbackPickerModel(items: FallbackProviderOption[]): Fallbac
     ? {
         id: selectedModel.id,
         providerId: selectedSurface.providerId,
-        vendorId: selectedProvider.vendorId,
-        vendorLabel: selectedProvider.vendorLabel,
+        endpoint: selectedSurface.endpoint,
+        productId: selectedProvider.productId,
+        productLabel: selectedProvider.productLabel,
         providerLabel: selectedProvider.label,
         providerIconUrl: selectedProvider.iconUrl,
         providerType: selectedSurface.providerType,
@@ -91,4 +92,9 @@ export function useFallbackPickerModel(items: FallbackProviderOption[]): Fallbac
 
 function resolveSelectedValue(options: SelectOption[], value: string) {
   return options.some((item) => item.value === value) ? value : (options[0]?.value ?? "");
+}
+
+function surfaceOptionLabel(label: string, providerType: number) {
+  const typeLabel = providerTypeLabel(providerType);
+  return typeLabel === "Unknown" ? label : `${label} · ${typeLabel}`;
 }

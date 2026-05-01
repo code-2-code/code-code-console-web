@@ -2,16 +2,17 @@ import { type ProviderView } from "@code-code/agent-contract/platform/management
 import {
   connectProviderWithCustomAPIKey,
   connectProviderWithOAuth,
-  connectProviderWithVendorAPIKey,
+  connectProviderWithSurfaceAPIKey,
 } from "./api";
 import {
   isCLIOAuthConnectOption,
   isCustomAPIKeyConnectOption,
-  isVendorAPIKeyConnectOption,
+  isSurfaceAPIKeyConnectOption,
   parseProtocolValue,
   type ProviderConnectOption,
 } from "./provider-connect-options";
 import { type ProviderConnectFormValues } from "./provider-connect-form-model";
+import { hasSurfaceBaseURLTemplate, resolveSurfaceBaseURLTemplate } from "./provider-surface-template";
 export async function startProviderOAuthConnect(
   selectedOption: ProviderConnectOption | undefined,
   data: ProviderConnectFormValues,
@@ -20,7 +21,7 @@ export async function startProviderOAuthConnect(
     throw new Error("Unsupported provider connect option.");
   }
   const response = await connectProviderWithOAuth({
-    cliId: selectedOption.cliId,
+    surfaceId: selectedOption.surfaceId,
     displayName: data.displayName,
   });
   if (response.outcome.case !== "session") {
@@ -40,20 +41,30 @@ export async function confirmProviderAPIKeyConnect(
   if (!selectedOption) {
     return undefined;
   }
-  if (!isVendorAPIKeyConnectOption(selectedOption) && !isCustomAPIKeyConnectOption(selectedOption)) {
+  if (!isSurfaceAPIKeyConnectOption(selectedOption) && !isCustomAPIKeyConnectOption(selectedOption)) {
     throw new Error("Unsupported provider connect option.");
   }
-  const response = isVendorAPIKeyConnectOption(selectedOption)
-    ? await connectProviderWithVendorAPIKey({
-      vendorId: selectedOption.vendorId,
+  const response = isSurfaceAPIKeyConnectOption(selectedOption)
+    ? await connectProviderWithSurfaceAPIKey({
+      surfaceId: selectedOption.prefilledSurfaces[0]?.surfaceId || "",
       displayName: data.displayName,
       apiKey: data.apiKey,
+      baseUrl: resolveSurfaceAPIKeyBaseURL(selectedOption, data),
     })
     : await connectProviderWithCustomAPIKey({
+      surfaceId: selectedOption.surfaceId,
       displayName: data.displayName,
       apiKey: data.apiKey,
       baseUrl: data.baseUrl,
       protocol: parseProtocolValue(data.protocol),
     });
   return response.outcome.case === "provider" ? response.outcome.value : undefined;
+}
+
+function resolveSurfaceAPIKeyBaseURL(selectedOption: Extract<ProviderConnectOption, { kind: "surfaceApiKey" }>, data: ProviderConnectFormValues) {
+  const template = selectedOption.prefilledSurfaces[0]?.baseUrl || "";
+  if (!hasSurfaceBaseURLTemplate(template)) {
+    return undefined;
+  }
+  return resolveSurfaceBaseURLTemplate(template, data.surfaceParameters || {});
 }

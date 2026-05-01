@@ -1,32 +1,41 @@
 import { OAuthAuthorizationFlow } from "@code-code/agent-contract/credential/v1";
-import type { ProviderSurfaceRuntime } from "@code-code/agent-contract/provider/v1";
-import type { CLI, OAuthCallbackDelivery, Vendor } from "@code-code/agent-contract/platform/support/v1";
+import type { CLI, OAuthCallbackDelivery, Surface } from "@code-code/agent-contract/platform/support/v1";
+import type { ProductInfo } from "@code-code/agent-contract/product-info/v1";
 import { providerConnectOptionAuthenticationLabel } from "./provider-authentication-presentation";
+import { resolveProductInfo } from "./provider-product-info";
 import { ProviderProtocol, type ProviderProtocolValue } from "./provider-protocol";
+import { surfaceBaseURLTemplateParameters } from "./provider-surface-template";
+import { apiEndpointsForSurface, cliIdForSurface } from "./provider-support-surface";
 
-export type ProviderConnectSurfaceTemplate = {
+export const CUSTOM_API_KEY_SURFACE_ID = "custom.api";
+
+export type ProviderConnectSurfaceOption = {
+  baseUrl: string;
+  parameterKeys?: string[];
+  protocol: ProviderProtocolValue;
   surfaceId: string;
-  runtime: ProviderSurfaceRuntime;
 };
 
 export type ProviderConnectOption =
   | {
     id: string;
-    kind: "vendorApiKey";
+    kind: "surfaceApiKey";
     displayName: string;
-    vendorId: string;
-    prefilledSurfaces: ProviderConnectSurfaceTemplate[];
+    prefilledSurfaces: ProviderConnectSurfaceOption[];
+    iconUrl?: string;
   }
   | {
     id: string;
     kind: "customApiKey";
     displayName: string;
+    surfaceId: string;
   }
   | {
     id: string;
     kind: "cliOAuth";
     displayName: string;
     cliId: string;
+    surfaceId: string;
     flow: OAuthAuthorizationFlow;
     callbackDelivery?: OAuthCallbackDelivery;
     recommended: boolean;
@@ -35,31 +44,47 @@ export type ProviderConnectOption =
 export type ProviderConnectOptionKind = ProviderConnectOption["kind"];
 
 export function listProviderConnectOptions(
-  vendors: Vendor[],
+  productInfos: ProductInfo[],
+  surfaces: Surface[],
   clis: CLI[]
 ): ProviderConnectOption[] {
-  const vendorOptions: ProviderConnectOption[] = vendors
-    .filter((item) => Boolean(item.vendor?.vendorId) && vendorPrefilledSurfaces(item).length > 0)
-    .map((item) => ({
-      id: `vendor:${item.vendor!.vendorId}`,
-      kind: "vendorApiKey" as const,
-      displayName: item.vendor!.displayName || item.vendor!.vendorId,
-      vendorId: item.vendor!.vendorId,
-      prefilledSurfaces: vendorPrefilledSurfaces(item)
-    }))
+  const surfaceOptions: ProviderConnectOption[] = surfaces
+    .flatMap((surface): ProviderConnectOption[] => {
+      const prefilledSurface = surfacePrefilledOption(surface);
+      if (!prefilledSurface) {
+        return [];
+      }
+      const resolvedProductInfo = resolveProductInfo(surface.productInfoId || surface.surfaceId, productInfos);
+      return [{
+        id: `surface:${surface.surfaceId}`,
+        kind: "surfaceApiKey" as const,
+        displayName: resolvedProductInfo?.displayName || surface.surfaceId,
+        prefilledSurfaces: [prefilledSurface],
+        ...(resolvedProductInfo?.iconUrl ? { iconUrl: resolvedProductInfo.iconUrl } : {}),
+      }];
+    })
     .sort((left, right) => left.displayName.localeCompare(right.displayName));
 
   const cliOptions: ProviderConnectOption[] = clis
-    .filter((item) => Boolean(item.oauth))
-    .map((item) => ({
-      id: `cli:${item.cliId}`,
-      kind: "cliOAuth" as const,
-      displayName: item.displayName || item.cliId,
-      cliId: item.cliId,
-      flow: item.oauth?.flow || OAuthAuthorizationFlow.UNSPECIFIED,
-      callbackDelivery: item.oauth?.codeFlow?.callbackDelivery,
-      recommended: item.oauth?.recommended === true
-    }))
+    .flatMap((item): ProviderConnectOption[] => {
+      if (!item.oauth) {
+        return [];
+      }
+      const surfaceId = cliSurfaceID(surfaces, item);
+      if (!surfaceId) {
+        return [];
+      }
+      return [{
+        id: `cli:${item.cliId}`,
+        kind: "cliOAuth" as const,
+        displayName: item.displayName || item.cliId,
+        cliId: item.cliId,
+        surfaceId,
+        flow: item.oauth?.flow || OAuthAuthorizationFlow.UNSPECIFIED,
+        callbackDelivery: item.oauth?.codeFlow?.callbackDelivery,
+        recommended: item.oauth?.recommended === true
+      }];
+    })
     .sort((left, right) => {
       if (left.kind !== "cliOAuth" || right.kind !== "cliOAuth") {
         return 0;
@@ -71,40 +96,49 @@ export function listProviderConnectOptions(
     });
 
   return [
-    ...vendorOptions,
+    ...surfaceOptions,
     {
       id: "custom-api-key",
       kind: "customApiKey" as const,
       displayName: "Custom API Key",
+      surfaceId: CUSTOM_API_KEY_SURFACE_ID,
     },
     ...cliOptions
   ];
 }
 
-function vendorPrefilledSurfaces(vendor: Vendor): ProviderConnectSurfaceTemplate[] {
-  const templates: ProviderConnectSurfaceTemplate[] = [];
-  for (const binding of vendor.providerBindings) {
-    for (const template of binding.surfaceTemplates) {
-      const surfaceId = template.surfaceId?.trim() || "";
-      if (!surfaceId || !template.runtime) {
-        continue;
-      }
-      templates.push({ surfaceId, runtime: template.runtime });
-    }
+function surfacePrefilledOption(surface: Surface): ProviderConnectSurfaceOption | undefined {
+  const surfaceId = surface.surfaceId.trim();
+  const endpoint = apiEndpointsForSurface(surface)[0];
+  if (!surfaceId || !endpoint) {
+    return undefined;
   }
-  return templates;
+  return {
+    surfaceId,
+    baseUrl: endpoint.baseUrl.trim(),
+    parameterKeys: surfaceBaseURLTemplateParameters(endpoint.baseUrl),
+    protocol: endpoint.protocol,
+  };
+}
+
+function cliSurfaceID(surfaces: Surface[], cli: CLI) {
+  const normalizedCLIID = cli.cliId.trim();
+  if (!normalizedCLIID) {
+    return "";
+  }
+  return surfaces.find((surface) => cliIdForSurface([surface], surface.surfaceId) === normalizedCLIID)?.surfaceId || "";
 }
 
 export function findProviderConnectOption(options: ProviderConnectOption[], optionId: string) {
   return options.find((item) => item.id === optionId);
 }
 
-export function isAPIKeyConnectOption(option?: ProviderConnectOption): option is Extract<ProviderConnectOption, { kind: "vendorApiKey" | "customApiKey" }> {
-  return option?.kind === "vendorApiKey" || option?.kind === "customApiKey";
+export function isAPIKeyConnectOption(option?: ProviderConnectOption): option is Extract<ProviderConnectOption, { kind: "surfaceApiKey" | "customApiKey" }> {
+  return option?.kind === "surfaceApiKey" || option?.kind === "customApiKey";
 }
 
-export function isVendorAPIKeyConnectOption(option?: ProviderConnectOption): option is Extract<ProviderConnectOption, { kind: "vendorApiKey" }> {
-  return option?.kind === "vendorApiKey";
+export function isSurfaceAPIKeyConnectOption(option?: ProviderConnectOption): option is Extract<ProviderConnectOption, { kind: "surfaceApiKey" }> {
+  return option?.kind === "surfaceApiKey";
 }
 
 export function isCustomAPIKeyConnectOption(option?: ProviderConnectOption): option is Extract<ProviderConnectOption, { kind: "customApiKey" }> {
@@ -116,7 +150,7 @@ export function isCLIOAuthConnectOption(option?: ProviderConnectOption): option 
 }
 
 export function scopedProviderConnectOptionLabel(option: ProviderConnectOption) {
-  if (isVendorAPIKeyConnectOption(option) || isCustomAPIKeyConnectOption(option)) {
+  if (isSurfaceAPIKeyConnectOption(option) || isCustomAPIKeyConnectOption(option)) {
     return option.displayName;
   }
   const authLabel = providerConnectOptionAuthenticationLabel(option.kind);

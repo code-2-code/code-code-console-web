@@ -1,5 +1,5 @@
 import { runtimePrimaryModelId } from "./runtime-model-selector";
-import { runtimeRefKey } from "./session-runtime-options";
+import { runtimeConfigSelectionKey } from "./session-runtime-options";
 import { cloneInlineSetup, type ChatInlineSetup, type ChatMode, type ChatSetupRequest, type ChatView } from "./types";
 
 type ReadCanSendInput = {
@@ -38,7 +38,7 @@ export function readCanSendChatRun({
     inlineDraft &&
       inlineDraft.providerId.trim() &&
       inlineDraft.executionClass.trim() &&
-      runtimeRefKey(inlineDraft.runtimeConfig.providerRuntimeRef) &&
+      runtimeConfigSelectionKey(inlineDraft.runtimeConfig) &&
       runtimePrimaryModelId(inlineDraft.runtimeConfig.primaryModelSelector).trim(),
   );
 }
@@ -51,7 +51,7 @@ export function isChatSetupReady(mode: ChatMode, profileId: string, inlineDraft:
     inlineDraft &&
       inlineDraft.providerId.trim() &&
       inlineDraft.executionClass.trim() &&
-      runtimeRefKey(inlineDraft.runtimeConfig.providerRuntimeRef) &&
+      runtimeConfigSelectionKey(inlineDraft.runtimeConfig) &&
       runtimePrimaryModelId(inlineDraft.runtimeConfig.primaryModelSelector).trim(),
   );
 }

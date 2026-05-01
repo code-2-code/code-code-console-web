@@ -1,10 +1,9 @@
 import type { ProviderModel } from "./provider-model";
-import type { ProviderModelCatalogEntry } from "@code-code/agent-contract/provider/v1";
 
 export function providerPrimaryProviderModelIDs(provider: ProviderModel) {
-  const models = provider.primarySurface()?.runtime?.catalog?.models ?? [];
+  const models = provider.raw.models ?? [];
   return models
-    .map((model: ProviderModelCatalogEntry) => model.providerModelId.trim())
+    .map((model) => model.providerModelId.trim())
     .filter(Boolean);
 }
 

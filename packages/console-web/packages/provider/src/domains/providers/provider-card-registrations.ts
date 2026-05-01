@@ -3,6 +3,7 @@ import { ProviderCardCerebras } from "./components/provider-card-cerebras";
 import { ProviderCardCodex } from "./components/provider-card-codex";
 import { ProviderCardGemini } from "./components/provider-card-gemini";
 import { ProviderCardGoogle } from "./components/provider-card-google";
+import { ProviderCardMistral } from "./components/provider-card-mistral";
 import { ProviderCardMiniMax } from "./components/provider-card-minimax";
 import { ProviderCardOpenRouter } from "./components/provider-card-openrouter";
 import { registerProviderCardRenderer } from "./provider-card-registry-store";
@@ -31,6 +32,10 @@ const providerCardRegistrations = [
   {
     owner: { kind: "vendor", vendorId: "google" },
     render: ProviderCardGoogle,
+  },
+  {
+    owner: { kind: "vendor", vendorId: "mistral" },
+    render: ProviderCardMistral,
   },
   {
     owner: { kind: "vendor", vendorId: "openrouter" },

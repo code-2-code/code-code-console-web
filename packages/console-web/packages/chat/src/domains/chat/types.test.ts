@@ -1,6 +1,8 @@
 import { create } from "@bufbuild/protobuf";
 import { describe, expect, it } from "vitest";
 import { AgentResourcesSchema } from "@code-code/agent-contract/agent/v1/cap";
+import { Protocol } from "@code-code/agent-contract/api-protocol/v1";
+import { ProviderEndpointType } from "@code-code/agent-contract/provider/v1";
 import { AgentSessionRuntimeConfigSchema } from "@code-code/agent-contract/platform/agent-session/v1";
 import type { ChatView } from "./types";
 import { hasPendingSetupChange } from "./types";
@@ -20,7 +22,8 @@ describe("chat session setup diff", () => {
       providerId: "codex",
       executionClass: "cli-standard",
       runtimeConfig: create(AgentSessionRuntimeConfigSchema, {
-        providerRuntimeRef: { surfaceId: "primary-1" },
+        providerId: "primary-1",
+        endpoint: apiEndpoint("primary-1"),
         primaryModelSelector: { selector: { case: "providerModelId", value: "gpt-5" } },
       }),
       resourceConfig: create(AgentResourcesSchema, {
@@ -35,7 +38,8 @@ describe("chat session setup diff", () => {
       providerId: "codex",
       executionClass: "cli-standard",
       runtimeConfig: create(AgentSessionRuntimeConfigSchema, {
-        providerRuntimeRef: { surfaceId: "primary-2" },
+        providerId: "primary-2",
+        endpoint: apiEndpoint("primary-2"),
         primaryModelSelector: { selector: { case: "providerModelId", value: "gpt-5" } },
       }),
       resourceConfig: create(AgentResourcesSchema, {
@@ -67,7 +71,8 @@ function inlineView(): ChatView {
         executionClass: "cli-standard",
         editable: true,
         runtimeConfig: create(AgentSessionRuntimeConfigSchema, {
-          providerRuntimeRef: { surfaceId: "primary-1" },
+          providerId: "primary-1",
+          endpoint: apiEndpoint("primary-1"),
           primaryModelSelector: { selector: { case: "providerModelId", value: "gpt-5" } },
         }),
         resourceConfig: create(AgentResourcesSchema, {
@@ -75,6 +80,19 @@ function inlineView(): ChatView {
         }),
       },
       state: {},
+    },
+  };
+}
+
+function apiEndpoint(id: string) {
+  return {
+    type: ProviderEndpointType.API,
+    shape: {
+      case: "api" as const,
+      value: {
+        baseUrl: `https://${id}.test/v1`,
+        protocol: Protocol.OPENAI_COMPATIBLE,
+      },
     },
   };
 }

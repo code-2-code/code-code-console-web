@@ -2,7 +2,7 @@ import { create } from "@bufbuild/protobuf";
 import { describe, expect, it } from "vitest";
 import { AgentResourcesSchema } from "@code-code/agent-contract/agent/v1/cap";
 import { Protocol } from "@code-code/agent-contract/api-protocol/v1";
-import type { ProviderRuntimeRef } from "@code-code/agent-contract/provider/v1";
+import { ProviderEndpointType, type ProviderEndpoint } from "@code-code/agent-contract/provider/v1";
 import { AgentSessionRuntimeConfigSchema } from "@code-code/agent-contract/platform/agent-session/v1";
 import { sessionRuntimeProviderSelectItems, normalizeInlineDraftWithSessionRuntimeOptions, type SessionRuntimeOptions } from "./session-runtime-options";
 
@@ -12,7 +12,8 @@ describe("session runtime options", () => {
 
     expect(next.providerId).toBe("");
     expect(next.executionClass).toBe("");
-    expect(next.runtimeConfig.providerRuntimeRef?.surfaceId).toBeUndefined();
+    expect(next.runtimeConfig.providerId).toBe("");
+    expect(next.runtimeConfig.endpoint).toBeUndefined();
     expect(next.runtimeConfig.primaryModelSelector).toBeUndefined();
   });
 
@@ -24,7 +25,7 @@ describe("session runtime options", () => {
 
     expect(next.providerId).toBe("codex");
     expect(next.executionClass).toBe("cli-standard");
-    expect(next.runtimeConfig.providerRuntimeRef?.surfaceId).toBe("openai-default");
+    expect(next.runtimeConfig.providerId).toBe("openai-default");
     expect(next.runtimeConfig.primaryModelSelector?.selector.value).toBe("gpt-5");
   });
 
@@ -33,14 +34,15 @@ describe("session runtime options", () => {
       providerId: "codex",
       executionClass: "cli-long-context",
       runtimeConfig: create(AgentSessionRuntimeConfigSchema, {
-        providerRuntimeRef: apiRuntimeRef("openai-backup"),
+        providerId: "openai-backup",
+        endpoint: apiEndpoint("openai-backup"),
         primaryModelSelector: { selector: { case: "providerModelId", value: "gpt-5" } },
         fallbacks: [],
       }),
       resourceConfig: create(AgentResourcesSchema, {}),
     }, runtimeOptions());
 
-    expect(next.runtimeConfig.providerRuntimeRef?.surfaceId).toBe("openai-backup");
+    expect(next.runtimeConfig.providerId).toBe("openai-backup");
     expect(next.runtimeConfig.primaryModelSelector?.selector.value).toBe("gpt-5-mini");
   });
 
@@ -79,12 +81,14 @@ function runtimeOptions(): SessionRuntimeOptions {
       executionClasses: ["cli-standard", "cli-long-context"],
       surfaces: [
         {
-          runtimeRef: apiRuntimeRef("openai-default"),
+          providerId: "openai-default",
+          endpoint: apiEndpoint("openai-default"),
           label: "OpenAI Default",
           models: ["gpt-5", "gpt-5-mini"],
         },
         {
-          runtimeRef: apiRuntimeRef("openai-backup"),
+          providerId: "openai-backup",
+          endpoint: apiEndpoint("openai-backup"),
           label: "OpenAI Backup",
           models: ["gpt-5-mini"],
         },
@@ -108,7 +112,8 @@ function runtimeOptionsWithNoImageProvider(): SessionRuntimeOptions {
         executionClasses: ["cli-standard"],
         surfaces: [
           {
-            runtimeRef: apiRuntimeRef("openai-default"),
+            providerId: "openai-default",
+            endpoint: apiEndpoint("openai-default"),
             label: "OpenAI Default",
             models: ["gpt-5"],
           },
@@ -118,13 +123,15 @@ function runtimeOptionsWithNoImageProvider(): SessionRuntimeOptions {
   };
 }
 
-function apiRuntimeRef(surfaceId: string): ProviderRuntimeRef {
+function apiEndpoint(providerId: string): ProviderEndpoint {
   return {
-    providerId: "provider",
-    surfaceId,
-    access: {
+    type: ProviderEndpointType.API,
+    shape: {
       case: "api",
-      value: { protocol: Protocol.OPENAI_COMPATIBLE },
+      value: {
+        baseUrl: `https://${providerId}.test/v1`,
+        protocol: Protocol.OPENAI_COMPATIBLE,
+      },
     },
-  } as ProviderRuntimeRef;
+  } as ProviderEndpoint;
 }

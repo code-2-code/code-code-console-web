@@ -15,23 +15,23 @@ export interface ProviderAuthenticationModel {
 
 type ProviderAuthenticationModelInput = {
   providerId: string;
-  vendorId?: string;
+  apiKeyLabel?: string;
   kind: ProviderAuthenticationKind;
 };
 
 class DefaultProviderAuthenticationModel implements ProviderAuthenticationModel {
   private readonly providerId: string;
-  private readonly vendorId: string;
+  private readonly apiKeyLabel: string;
   private readonly kind: ProviderAuthenticationKind;
 
   constructor(input: ProviderAuthenticationModelInput) {
     this.providerId = input.providerId;
-    this.vendorId = input.vendorId?.trim() || "";
+    this.apiKeyLabel = input.apiKeyLabel?.trim() || "";
     this.kind = input.kind;
   }
 
   apiKeyPlaceholder() {
-    return this.vendorId ? `${this.vendorId} API key` : "sk-…";
+    return this.apiKeyLabel ? `${this.apiKeyLabel} API key` : "sk-…";
   }
 
   missingAccountNotice(): ProviderAuthenticationNotice | null {

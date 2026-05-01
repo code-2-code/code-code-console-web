@@ -3,17 +3,21 @@ import type { ComponentProps } from "react";
 import type { ProviderView } from "@code-code/agent-contract/platform/management/v1";
 import { DialogFooterActions, ErrorCalloutIf, SoftBadge, StatusBadge } from "@code-code/console-web-ui";
 import { VendorAvatar } from "../../models/components/vendor-avatar";
-import { useProviderActiveQueryStatus } from "../provider-active-query-status";
+import { useProviderQuotaQueryStatus } from "../provider-quota-query-status";
 import { providerModel } from "../provider-model";
 import { ProviderAuthenticationSummary } from "./provider-authentication-summary";
-import { ProviderModelCatalogBadges } from "./provider-model-catalog";
+import { ProviderModelBadges } from "./provider-model-badges";
+import { SearchIcon } from "./provider-model-catalog-editor-icons";
 
 type Props = {
   provider: ProviderView;
   authenticationKind: ComponentProps<typeof ProviderAuthenticationSummary>["kind"];
-  vendorIconUrl?: string;
-  supportsActiveQuery: boolean;
-  isProbingActiveQuery: boolean;
+  displayName: string;
+  iconUrl?: string;
+  supportsModelCatalogProbe: boolean;
+  supportsQuotaQuery: boolean;
+  isProbingModelCatalog: boolean;
+  isProbingQuotaQuery: boolean;
   deleteError: string;
   isDeleting: boolean;
   observabilityAuthenticationActionLabel?: string;
@@ -22,16 +26,20 @@ type Props = {
   onStartRename: () => void;
   onStartAuthentication: () => void;
   onStartObservabilityAuthentication: () => void;
-  onProbeActiveQuery: () => void;
+  onProbeModelCatalog: () => void;
+  onProbeQuotaQuery: () => void;
   showObservabilityAuthenticationAction?: boolean;
 };
 
 export function ProviderDetailsView({
   provider,
   authenticationKind,
-  vendorIconUrl,
-  supportsActiveQuery,
-  isProbingActiveQuery,
+  displayName,
+  iconUrl,
+  supportsModelCatalogProbe,
+  supportsQuotaQuery,
+  isProbingModelCatalog,
+  isProbingQuotaQuery,
   deleteError,
   isDeleting,
   observabilityAuthenticationActionLabel,
@@ -40,20 +48,21 @@ export function ProviderDetailsView({
   onStartRename,
   onStartAuthentication,
   onStartObservabilityAuthentication,
-  onProbeActiveQuery,
+  onProbeModelCatalog,
+  onProbeQuotaQuery,
   showObservabilityAuthenticationAction,
 }: Props) {
   const providerViewModel = providerModel(provider);
   const protocolLabels = providerViewModel.protocolLabels();
-  const accountStatus = useProviderActiveQueryStatus(provider, supportsActiveQuery) ?? providerViewModel.status();
+  const accountStatus = useProviderQuotaQueryStatus(provider, supportsQuotaQuery) ?? providerViewModel.status();
 
   return (
     <>
       <Flex justify="between" align="start" mb="4" gap="3">
         <Box>
           <Flex align="center" gap="2">
-            <VendorAvatar displayName={providerViewModel.displayName()} iconUrl={vendorIconUrl} size="2" />
-            <Dialog.Title mb="0">{providerViewModel.displayName()}</Dialog.Title>
+            <VendorAvatar displayName={displayName} iconUrl={iconUrl} size="2" />
+            <Dialog.Title mb="0">{displayName}</Dialog.Title>
           </Flex>
           <Flex align="center" gap="2" wrap="wrap" mt="2">
             <SoftBadge color="gray" label={providerViewModel.authenticationLabel()} />
@@ -78,12 +87,21 @@ export function ProviderDetailsView({
       <Flex direction="column" gap="4">
         <Box>
           <Heading size="2" mb="1">Models</Heading>
-          <ProviderModelCatalogBadges catalog={provider.modelCatalog ?? undefined} />
+          <ProviderModelBadges models={provider.models} />
+          {supportsModelCatalogProbe ? (
+            <Flex gap="2" mt="2" wrap="wrap">
+              <Button size="2" variant="soft" color="gray" onClick={onProbeModelCatalog} disabled={isProbingModelCatalog}>
+                <SearchIcon />
+                {isProbingModelCatalog ? "Probing…" : "Probe Model Catalog"}
+              </Button>
+            </Flex>
+          ) : null}
         </Box>
 
         <Box>
           <Heading size="2" mb="1">Auth</Heading>
           <ProviderAuthenticationSummary
+            providerId={provider.providerId}
             providerCredentialId={provider.providerCredentialId}
             kind={authenticationKind}
           />
@@ -96,9 +114,9 @@ export function ProviderDetailsView({
                 {observabilityAuthenticationActionLabel || "Update Observability Auth…"}
               </Button>
             ) : null}
-            {supportsActiveQuery ? (
-              <Button size="2" variant="soft" color="gray" onClick={onProbeActiveQuery} disabled={isProbingActiveQuery}>
-                {isProbingActiveQuery ? "Probing…" : "Probe Active Query"}
+            {supportsQuotaQuery ? (
+              <Button size="2" variant="soft" color="gray" onClick={onProbeQuotaQuery} disabled={isProbingQuotaQuery}>
+                {isProbingQuotaQuery ? "Probing…" : "Probe Quota Query"}
               </Button>
             ) : null}
           </Flex>

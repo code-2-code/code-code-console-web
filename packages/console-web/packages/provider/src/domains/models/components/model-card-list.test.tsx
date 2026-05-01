@@ -39,7 +39,7 @@ describe("ModelCardList", () => {
           models={[model]}
           selectedSourceIds={[]}
           vendorsById={{
-            cohere: { vendorId: "cohere", displayName: "Cohere", aliases: [] },
+            cohere: { vendor: { vendorId: "cohere", displayName: "Cohere", aliases: [] } },
           }}
         />
       </Theme>
@@ -73,7 +73,7 @@ describe("ModelCardList", () => {
           models={[model]}
           selectedSourceIds={[]}
           vendorsById={{
-            cohere: { vendorId: "cohere", displayName: "Cohere", aliases: [] },
+            cohere: { vendor: { vendorId: "cohere", displayName: "Cohere", aliases: [] } },
           }}
         />
       </Theme>

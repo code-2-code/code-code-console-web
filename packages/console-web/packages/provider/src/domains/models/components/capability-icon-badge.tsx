@@ -44,6 +44,6 @@ export function CapabilityBadge({ capability }: { capability: ModelCapability })
 
 function IconBadge({ children, color, label }: IconBadgeProps) {
   return (
-    <SoftBadge ariaLabel={label} color={color} title={label} label={children} />
+    <SoftBadge ariaLabel={label} color={color} title={label} label={children} size="1" />
   );
 }

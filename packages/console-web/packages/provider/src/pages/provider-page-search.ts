@@ -75,7 +75,7 @@ function readTrimmedParam(searchParams: URLSearchParams, key: string) {
 
 function parseProviderAddKind(value?: string): ProviderConnectOptionKind | undefined {
   switch (value) {
-    case "vendorApiKey":
+    case "surfaceApiKey":
     case "customApiKey":
     case "cliOAuth":
       return value;

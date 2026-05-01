@@ -1,6 +1,7 @@
 import { useMemo, type KeyboardEvent, type MouseEvent } from "react";
 import { Flex, Text } from "@radix-ui/themes";
-import type { CLI } from "@code-code/agent-contract/platform/support/v1";
+import type { ProductInfo } from "@code-code/agent-contract/product-info/v1";
+import type { CLI, Surface } from "@code-code/agent-contract/platform/support/v1";
 import type { ProviderView } from "@code-code/agent-contract/platform/management/v1";
 import type { Vendor } from "@code-code/agent-contract/platform/support/v1";
 import { SoftBadge, StatusBadge, SurfaceSectionCard } from "@code-code/console-web-ui";
@@ -8,38 +9,48 @@ import { VendorAvatar } from "../../models/components/vendor-avatar";
 import { useProviderObservability } from "../api";
 import { resolveProviderCardOwner } from "../provider-card-capability";
 import { resolveProviderCardRenderer } from "../provider-card-registry";
-import { useProviderActiveQueryStatusFromObservability } from "../provider-active-query-status";
+import { useProviderQuotaQueryStatusFromObservability } from "../provider-quota-query-status";
 import { providerModel } from "../provider-model";
-import { providerHostTelemetryBadgeLabel, providerHostTelemetryStatus } from "../provider-host-telemetry";
-import { resolveProviderActiveQueryOwner } from "../provider-observability-visualization";
+import { providerSupportsModelCatalogProbe } from "../provider-model-catalog-probe";
+import { resolveProductInfo } from "../provider-product-info";
+import { resolveProviderQuotaQueryOwner } from "../provider-observability-visualization";
+import { providerProductInfoId } from "../provider-support-surface";
 import type { ProviderWorkflowStatusView } from "../provider-workflow-status-view";
 import { ProviderCustomCard } from "./provider-custom-card";
-import { ProbeIcon, ProviderActionIconButton } from "./provider-model-catalog-editor-icons";
+import { ProbeIcon, ProviderActionIconButton, SearchIcon } from "./provider-model-catalog-editor-icons";
 
 type Props = {
   provider: ProviderView;
   clis: CLI[];
+  productInfos: ProductInfo[];
+  surfaces: Surface[];
   vendors: Vendor[];
-  vendorIconUrl?: string;
   workflowStatus?: ProviderWorkflowStatusView;
-  isProbingActiveQuery?: boolean;
+  isProbingQuotaQuery?: boolean;
+  isProbingModelCatalog?: boolean;
   readonly?: boolean;
   onOpen?: (provider: ProviderView) => void;
-  onProbeActiveQuery?: (provider: ProviderView) => void;
+  onProbeQuotaQuery?: (provider: ProviderView) => void;
+  onProbeModelCatalog?: (provider: ProviderView) => void;
 };
 
 export function ProviderCard({
   provider,
   clis,
-  onOpen,
-  onProbeActiveQuery,
+  productInfos,
+  surfaces,
   vendors,
-  vendorIconUrl,
   workflowStatus,
-  isProbingActiveQuery,
+  isProbingQuotaQuery,
+  isProbingModelCatalog,
   readonly = false,
+  onOpen,
+  onProbeQuotaQuery,
+  onProbeModelCatalog,
 }: Props) {
   const providerViewModel = providerModel(provider);
+  const resolvedProductInfo = resolveProductInfo(providerProductInfoId(provider, vendors, surfaces), productInfos, vendors);
+  const displayName = resolvedProductInfo?.displayName || providerViewModel.displayName();
   const authLabel = providerViewModel.authenticationLabel();
   const protocolLabels = providerViewModel.protocolLabels();
   const cardOwner = useMemo(
@@ -54,13 +65,13 @@ export function ProviderCard({
     () => Boolean(resolveProviderCardRenderer(cardOwner)),
     [cardOwner],
   );
-  const activeQueryOwner = useMemo(
-    () => resolveProviderActiveQueryOwner(provider, clis, vendors),
+  const quotaQueryOwner = useMemo(
+    () => resolveProviderQuotaQueryOwner(provider, clis, vendors),
     [provider, clis, vendors],
   );
-  const hasActiveQuery = Boolean(activeQueryOwner);
+  const hasQuotaQuery = Boolean(quotaQueryOwner);
   const { detail: statusDetail, isLoading: isStatusLoading, isError: isStatusError } = useProviderObservability(
-    hasActiveQuery ? provider.providerId : undefined,
+    hasQuotaQuery ? provider.providerId : undefined,
     "1h",
     "status",
   );
@@ -69,39 +80,56 @@ export function ProviderCard({
     "1h",
     "card",
   );
-  const status = useProviderActiveQueryStatusFromObservability(provider, hasActiveQuery, {
+  const status = useProviderQuotaQueryStatusFromObservability(provider, hasQuotaQuery, {
     detail: statusDetail,
     isLoading: isStatusLoading,
     isError: isStatusError,
-  }, activeQueryOwner) ?? providerViewModel.status();
+  }, quotaQueryOwner) ?? providerViewModel.status();
+  const supportsModelCatalogProbe = providerSupportsModelCatalogProbe(provider, surfaces);
+  const hasActions = !readonly && (hasQuotaQuery || supportsModelCatalogProbe);
 
   return (
     <SurfaceSectionCard
       title={(
         <Flex align="center" gap="2" wrap="wrap" style={{ minWidth: 0 }}>
           <VendorAvatar
-            displayName={providerViewModel.displayName()}
-            iconUrl={vendorIconUrl}
+            displayName={displayName}
+            iconUrl={resolvedProductInfo?.iconUrl}
             size="1"
           />
-          <Text weight="medium" truncate>{providerViewModel.displayName()}</Text>
-          <StatusBadge color={status.color} label={status.label} />
+          <Text weight="medium" truncate>{displayName}</Text>
         </Flex>
       )}
-      actions={!readonly && hasActiveQuery ? (
+      actions={hasActions ? (
         <Flex gap="2" align="center">
-          <ProviderActionIconButton
-            label="Probe active query"
-            title={isProbingActiveQuery ? "Probing active query" : "Probe active query"}
-            disabled={Boolean(isProbingActiveQuery)}
-            onClick={(event: MouseEvent) => {
-              event?.stopPropagation();
-              onProbeActiveQuery?.(provider);
-            }}
-            onKeyDown={(event: KeyboardEvent) => event.stopPropagation()}
-          >
-            <ProbeIcon />
-          </ProviderActionIconButton>
+          {supportsModelCatalogProbe ? (
+            <ProviderActionIconButton
+              label="Probe model catalog"
+              title={isProbingModelCatalog ? "Probing model catalog" : "Probe model catalog"}
+              disabled={Boolean(isProbingModelCatalog)}
+              onClick={(event: MouseEvent) => {
+                event?.stopPropagation();
+                onProbeModelCatalog?.(provider);
+              }}
+              onKeyDown={(event: KeyboardEvent) => event.stopPropagation()}
+            >
+              <SearchIcon />
+            </ProviderActionIconButton>
+          ) : null}
+          {hasQuotaQuery ? (
+            <ProviderActionIconButton
+              label="Probe quota query"
+              title={isProbingQuotaQuery ? "Probing quota query" : "Probe quota query"}
+              disabled={Boolean(isProbingQuotaQuery)}
+              onClick={(event: MouseEvent) => {
+                event?.stopPropagation();
+                onProbeQuotaQuery?.(provider);
+              }}
+              onKeyDown={(event: KeyboardEvent) => event.stopPropagation()}
+            >
+              <ProbeIcon />
+            </ProviderActionIconButton>
+          ) : null}
         </Flex>
       ) : null}
       cardSize="2"
@@ -109,8 +137,16 @@ export function ProviderCard({
       cardProps={readonly ? undefined : {
         role: "button",
         tabIndex: 0,
-        onClick: () => onOpen?.(provider),
+        onClick: (event) => {
+          if (!isEventFromCurrentTarget(event)) {
+            return;
+          }
+          onOpen?.(provider);
+        },
         onKeyDown: (event) => {
+          if (!isEventFromCurrentTarget(event)) {
+            return;
+          }
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
             onOpen?.(provider);
@@ -123,16 +159,6 @@ export function ProviderCard({
         {protocolLabels.map((label) => (
           <SoftBadge key={`protocol:${label}`} color="gray" label={label} />
         ))}
-        {provider.hostTelemetry?.map((item) => {
-          const telemetry = providerHostTelemetryStatus(item);
-          return (
-            <SoftBadge
-              key={`${item.scheme}:${item.host}:${item.port}`}
-              color={telemetry.color}
-              label={providerHostTelemetryBadgeLabel(item)}
-            />
-          );
-        })}
       </Flex>
       <ProviderCustomCard
         provider={provider}
@@ -141,7 +167,7 @@ export function ProviderCard({
         detail={cardDetail}
         isLoading={isCardLoading}
         error={cardError}
-        status={hasActiveQuery ? status : null}
+        status={hasQuotaQuery ? status : null}
       />
       {workflowStatus ? (
         <Flex align="center" gap="2">
@@ -153,4 +179,12 @@ export function ProviderCard({
       ) : null}
     </SurfaceSectionCard>
   );
+}
+
+function isEventFromCurrentTarget(event: MouseEvent | KeyboardEvent) {
+  const target = event.target;
+  if (!(target instanceof Node)) {
+    return false;
+  }
+  return event.currentTarget.contains(target);
 }

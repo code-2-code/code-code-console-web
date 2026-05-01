@@ -73,7 +73,7 @@ function FallbackRow({
               <FallbackAvailabilityBadge availability={item.availability} />
             </Flex>
             <Text size="1" color="gray" style={metaStyle}>
-              {item.providerLabel} · {item.surfaceLabel} · {item.vendorLabel}
+              {item.providerLabel} · {item.surfaceLabel} · {item.productLabel}
             </Text>
           </Box>
         </Flex>

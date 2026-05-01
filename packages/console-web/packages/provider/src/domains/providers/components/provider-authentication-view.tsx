@@ -6,6 +6,7 @@ import { ProviderAuthenticationForm } from "./provider-authentication-form";
 type Props = {
   provider: ProviderView;
   authenticationKind: ComponentProps<typeof ProviderAuthenticationForm>["kind"];
+  apiKeyLabel?: string;
   cliId?: string;
   onSuccess: () => void;
   onCancel: () => void;
@@ -14,6 +15,7 @@ type Props = {
 export function ProviderAuthenticationView({
   provider,
   authenticationKind,
+  apiKeyLabel,
   cliId,
   onSuccess,
   onCancel,
@@ -23,7 +25,7 @@ export function ProviderAuthenticationView({
       <Dialog.Title size="4" mb="3">Update Auth</Dialog.Title>
       <ProviderAuthenticationForm
         providerId={provider.providerId}
-        vendorId={provider.productInfoId}
+        apiKeyLabel={apiKeyLabel}
         cliId={cliId}
         kind={authenticationKind}
         onSuccess={onSuccess}

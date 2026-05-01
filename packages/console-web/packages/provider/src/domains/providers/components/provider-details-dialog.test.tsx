@@ -3,17 +3,18 @@ import { Theme } from "@radix-ui/themes";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  ActiveQueryInputControl,
-  ActiveQueryInputPersistence,
-  ActiveQueryInputValueTransform,
+  QuotaQueryInputControl,
+  QuotaQueryInputPersistence,
+  QuotaQueryInputValueTransform,
 } from "@code-code/agent-contract/observability/v1";
 import {
   ProviderViewSchema,
   type ProviderView,
 } from "@code-code/agent-contract/platform/management/v1";
+import { ProviderEndpointType, type ProviderEndpoint } from "@code-code/agent-contract/provider/v1";
 import { ProviderPhase } from "@code-code/agent-contract/platform/provider/v1/shared";
 import type { Vendor } from "@code-code/agent-contract/platform/support/v1";
-import { ProviderProtocol } from "../provider-protocol";
+import { ProviderProtocol, type ProviderProtocolValue } from "../provider-protocol";
 import { ProviderDetailsDialog } from "./provider-details-dialog";
 
 describe("ProviderDetailsDialog", () => {
@@ -27,18 +28,20 @@ describe("ProviderDetailsDialog", () => {
         <ProviderDetailsDialog
           provider={mistralProvider()}
           clis={[]}
+          surfaces={[]}
           vendors={[mistralVendor()]}
           onClose={vi.fn()}
           onUpdated={vi.fn()}
-          onProbeActiveQuery={vi.fn()}
+          onProbeModelCatalog={vi.fn()}
+          onProbeQuotaQuery={vi.fn()}
         />
       </Theme>,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Update Session Token" }));
+    fireEvent.click(screen.getByRole("button", { name: "Update Admin Session" }));
 
-    expect(screen.getByRole("heading", { name: "Update Mistral Session Token" })).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("Paste Mistral session token")).toHaveAttribute("name", "values.access_token");
+    expect(screen.getByRole("heading", { name: "Update Mistral Admin Session" })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("ory_session_...=...; csrftoken=...")).toBeInTheDocument();
   });
 
   it("shows vendor observability multi-field form from support metadata", () => {
@@ -47,10 +50,12 @@ describe("ProviderDetailsDialog", () => {
         <ProviderDetailsDialog
           provider={googleProvider()}
           clis={[]}
+          surfaces={[]}
           vendors={[googleVendor()]}
           onClose={vi.fn()}
           onUpdated={vi.fn()}
-          onProbeActiveQuery={vi.fn()}
+          onProbeModelCatalog={vi.fn()}
+          onProbeQuotaQuery={vi.fn()}
         />
       </Theme>,
     );
@@ -59,7 +64,6 @@ describe("ProviderDetailsDialog", () => {
 
     expect(screen.getByRole("heading", { name: "Update AI Studio Session" })).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/SID=\.\.\.; HSID=/)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("AIzaSy...")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("946397203396 or projects/946397203396")).toBeInTheDocument();
   });
 });
@@ -69,18 +73,8 @@ function mistralProvider(): ProviderView {
     providerId: "mistral-ai",
     displayName: "Mistral AI",
     providerCredentialId: "mistral-api-key",
-    productInfoId: "mistral",
     surfaceId: "openai-compatible",
-    runtime: {
-      displayName: "Mistral OpenAI Compatible",
-      access: {
-        case: "api",
-        value: {
-          protocol: ProviderProtocol.OPENAI_COMPATIBLE,
-          baseUrl: "https://api.mistral.ai/v1",
-        },
-      },
-    },
+    endpoints: [apiEndpoint(ProviderProtocol.OPENAI_COMPATIBLE, "https://api.mistral.ai/v1")],
     status: {
       phase: ProviderPhase.READY,
     },
@@ -99,17 +93,11 @@ function mistralVendor(): Vendor {
       websiteUrl: "",
       description: "",
     },
-    providerBindings: [{
-      $typeName: "platform.support.v1.VendorProviderBinding",
-      providerBinding: {
-        $typeName: "platform.management.v1.ProviderView",
-        surfaceId: "openai-compatible",
-        modelCatalogProbeId: "",
-        quotaProbeId: "",
-        egressPolicyId: "",
-        headerRewritePolicyId: "",
-      },
-      surfaceTemplates: [],
+    surfaces: [{
+      $typeName: "platform.support.v1.Surface",
+      surfaceId: "openai-compatible",
+      productInfoId: "mistral",
+      spec: { case: "api", value: { $typeName: "platform.support.v1.ApiSurface", apiEndpoints: [] } },
       observability: {
         $typeName: "observability.v1.ObservabilityCapability",
         profiles: [{
@@ -120,30 +108,30 @@ function mistralVendor(): Vendor {
           metrics: [],
           metricQueries: [],
           collection: {
-            case: "activeQuery",
+            case: "quotaQuery",
             value: {
-              $typeName: "observability.v1.ActiveQueryCollection",
+              $typeName: "observability.v1.QuotaQueryCollection",
               collectorId: "mistral-billing",
               dynamicParameters: [],
               credentialBackfills: [],
               inputForm: {
-                $typeName: "observability.v1.ActiveQueryInputForm",
-                schemaId: "mistral-billing-session",
-                title: "Update Mistral Session Token",
-                actionLabel: "Update Session Token",
-                description: "Paste the session token.",
+                $typeName: "observability.v1.QuotaQueryInputForm",
+                schemaId: "mistral-admin-billing-session",
+                title: "Update Mistral Admin Session",
+                actionLabel: "Update Admin Session",
+                description: "Paste the Mistral Admin browser Cookie request header.",
                 fields: [{
-                  $typeName: "observability.v1.ActiveQueryInputField",
-                  fieldId: "access_token",
-                  label: "Session token",
+                  $typeName: "observability.v1.QuotaQueryInputField",
+                  fieldId: "cookie",
+                  label: "Request Cookie",
                   description: "",
-                  placeholder: "Paste Mistral session token",
+                  placeholder: "ory_session_...=...; csrftoken=...",
                   required: true,
                   sensitive: true,
-                  control: ActiveQueryInputControl.PASSWORD,
-    persistence: ActiveQueryInputPersistence.STORED_MATERIAL,
+                  control: QuotaQueryInputControl.TEXTAREA,
+                  persistence: QuotaQueryInputPersistence.STORED_MATERIAL,
                   targetFieldId: "",
-                  transform: ActiveQueryInputValueTransform.IDENTITY,
+                  transform: QuotaQueryInputValueTransform.IDENTITY,
                   defaultValue: "",
                 }],
               },
@@ -160,18 +148,8 @@ function googleProvider(): ProviderView {
     providerId: "google",
     displayName: "Google",
     providerCredentialId: "google-api-key",
-    productInfoId: "google",
     surfaceId: "gemini",
-    runtime: {
-      displayName: "Google Gemini",
-      access: {
-        case: "api",
-        value: {
-          protocol: ProviderProtocol.GEMINI,
-          baseUrl: "https://generativelanguage.googleapis.com/v1beta",
-        },
-      },
-    },
+    endpoints: [apiEndpoint(ProviderProtocol.GEMINI, "https://generativelanguage.googleapis.com/v1beta")],
     status: {
       phase: ProviderPhase.READY,
     },
@@ -190,17 +168,11 @@ function googleVendor(): Vendor {
       websiteUrl: "",
       description: "",
     },
-    providerBindings: [{
-      $typeName: "platform.support.v1.VendorProviderBinding",
-      providerBinding: {
-        $typeName: "platform.management.v1.ProviderView",
-        surfaceId: "gemini",
-        modelCatalogProbeId: "",
-        quotaProbeId: "",
-        egressPolicyId: "",
-        headerRewritePolicyId: "",
-      },
-      surfaceTemplates: [],
+    surfaces: [{
+      $typeName: "platform.support.v1.Surface",
+      surfaceId: "gemini",
+      productInfoId: "google",
+      spec: { case: "api", value: { $typeName: "platform.support.v1.ApiSurface", apiEndpoints: [] } },
       observability: {
         $typeName: "observability.v1.ObservabilityCapability",
         profiles: [{
@@ -211,59 +183,45 @@ function googleVendor(): Vendor {
           metrics: [],
           metricQueries: [],
           collection: {
-            case: "activeQuery",
+            case: "quotaQuery",
             value: {
-              $typeName: "observability.v1.ActiveQueryCollection",
+              $typeName: "observability.v1.QuotaQueryCollection",
               collectorId: "google-aistudio-quotas",
               dynamicParameters: [],
               credentialBackfills: [],
               inputForm: {
-                $typeName: "observability.v1.ActiveQueryInputForm",
+                $typeName: "observability.v1.QuotaQueryInputForm",
                 schemaId: "google-ai-studio-session",
                 title: "Update AI Studio Session",
                 actionLabel: "Update AI Studio Session",
                 description: "Paste AI Studio browser session fields and the quota project number.",
                 fields: [
                   {
-                    $typeName: "observability.v1.ActiveQueryInputField",
+                    $typeName: "observability.v1.QuotaQueryInputField",
                     fieldId: "cookie",
                     label: "Request Cookie",
                     description: "Copy the Cookie request header.",
                     placeholder: "SID=...; HSID=...; SSID=...; SAPISID=...; __Secure-1PAPISID=...",
                     required: true,
                     sensitive: true,
-                    control: ActiveQueryInputControl.TEXTAREA,
-                    persistence: ActiveQueryInputPersistence.STORED_MATERIAL,
+                    control: QuotaQueryInputControl.TEXTAREA,
+                    persistence: QuotaQueryInputPersistence.STORED_MATERIAL,
                     targetFieldId: "",
-                    transform: ActiveQueryInputValueTransform.IDENTITY,
+                    transform: QuotaQueryInputValueTransform.IDENTITY,
                     defaultValue: "",
                   },
                   {
-                    $typeName: "observability.v1.ActiveQueryInputField",
-                    fieldId: "page_api_key",
-                    label: "X-Goog-Api-Key",
-                    description: "",
-                    placeholder: "AIzaSy...",
-                    required: true,
-                    sensitive: true,
-                    control: ActiveQueryInputControl.PASSWORD,
-                    persistence: ActiveQueryInputPersistence.STORED_MATERIAL,
-                    targetFieldId: "",
-                    transform: ActiveQueryInputValueTransform.IDENTITY,
-                    defaultValue: "",
-                  },
-                  {
-                    $typeName: "observability.v1.ActiveQueryInputField",
+                    $typeName: "observability.v1.QuotaQueryInputField",
                     fieldId: "project_id",
                     label: "Project number",
                     description: "Use the projects/<number> value.",
                     placeholder: "946397203396 or projects/946397203396",
                     required: true,
                     sensitive: false,
-                    control: ActiveQueryInputControl.TEXT,
-                    persistence: ActiveQueryInputPersistence.STORED_MATERIAL,
+                    control: QuotaQueryInputControl.TEXT,
+                    persistence: QuotaQueryInputPersistence.STORED_MATERIAL,
                     targetFieldId: "",
-                    transform: ActiveQueryInputValueTransform.IDENTITY,
+                    transform: QuotaQueryInputValueTransform.IDENTITY,
                     defaultValue: "",
                   },
                 ],
@@ -274,4 +232,14 @@ function googleVendor(): Vendor {
       },
     }],
   };
+}
+
+function apiEndpoint(protocol: ProviderProtocolValue, baseUrl: string): ProviderEndpoint {
+  return {
+    type: ProviderEndpointType.API,
+    shape: {
+      case: "api",
+      value: { protocol, baseUrl },
+    },
+  } as ProviderEndpoint;
 }

@@ -6,16 +6,18 @@ import {
   type ProviderView,
 } from "@code-code/agent-contract/platform/management/v1";
 import { ProviderStatusEventKind } from "@code-code/agent-contract/platform/provider/v1/shared";
-import { useProviderCLIs, useProviderVendors } from "@code-code/console-web-credential";
+import { useProviderCLIs, useProviderSurfaces, useProviderVendors, useProductInfos } from "@code-code/console-web-credential";
 import {
   mutateProviderObservability,
+  probeProviderModelCatalog,
   probeAllProviderObservability,
   probeProvidersObservability,
   useProviderStatusEvents,
 } from "../domains/providers/api";
+import { providerSupportsModelCatalogProbe } from "../domains/providers/provider-model-catalog-probe";
 import { formatProviderObservabilityProbeSummary } from "../domains/providers/provider-observability-probe-summary";
 import { providerModel } from "../domains/providers/provider-model";
-import { providerActiveQueryProviderIDs } from "../domains/providers/provider-observability-visualization";
+import { providerQuotaQueryProviderIDs } from "../domains/providers/provider-observability-visualization";
 import { type ProviderConnectOptionKind } from "../domains/providers/provider-connect-options";
 import { useProviders } from "../domains/providers/reference-data";
 import {
@@ -34,7 +36,8 @@ export function useProvidersPageController() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { providers, error: providersError, isLoading, isError, mutate, upsertProvider } = useProviders();
   const { clis } = useProviderCLIs();
-
+  const { productInfos } = useProductInfos();
+  const { surfaces } = useProviderSurfaces();
   const { vendors } = useProviderVendors();
   const searchState = readProviderPageSearchState(searchParams);
   const searchFocusKey = providerSearchFocusKey(searchState);
@@ -43,8 +46,9 @@ export function useProvidersPageController() {
   const [preferredAddKind, setPreferredAddKind] = useState<ProviderConnectOptionKind | undefined>(searchState.connectKind);
   const [isRefreshingQuota, setIsRefreshingQuota] = useState(false);
   const [probingProviderId, setProbingProviderId] = useState("");
-  const [observabilityProbeMessage, setObservabilityProbeMessage] = useState("");
-  const [observabilityProbeError, setObservabilityProbeError] = useState("");
+  const [probingModelCatalogProviderId, setProbingModelCatalogProviderId] = useState("");
+  const [providerActionMessage, setProviderActionMessage] = useState("");
+  const [providerActionError, setProviderActionError] = useState("");
   const [providerWorkflowStatuses, setProviderWorkflowStatuses] = useState<Record<string, ProviderWorkflowStatusView>>({});
   const dismissedSearchFocusKeyRef = useRef("");
   const dismissedConnectSessionIDRef = useRef("");
@@ -134,49 +138,76 @@ export function useProvidersPageController() {
   };
 
   const handleRefreshQuota = async () => {
-    if (isRefreshingQuota) {
+    if (isRefreshingQuota || probingProviderId || probingModelCatalogProviderId) {
       return;
     }
     setIsRefreshingQuota(true);
-    setObservabilityProbeError("");
-    setObservabilityProbeMessage("");
+    setProviderActionError("");
+    setProviderActionMessage("");
     try {
-      setObservabilityProbeMessage(formatProviderObservabilityProbeSummary(await probeAllProviderObservability()));
+      setProviderActionMessage(formatProviderObservabilityProbeSummary(await probeAllProviderObservability()));
       await mutateProviderObservability();
     } catch (error) {
-      setObservabilityProbeError(requestErrorMessage(error, "Failed to refresh quota"));
+      setProviderActionError(requestErrorMessage(error, "Failed to refresh quota"));
     } finally {
       setIsRefreshingQuota(false);
     }
   };
 
-  const handleProbeProviderActiveQuery = async (provider: ProviderView) => {
-    if (isRefreshingQuota || probingProviderId) {
+  const handleProbeProviderQuotaQuery = async (provider: ProviderView) => {
+    if (isRefreshingQuota || probingProviderId || probingModelCatalogProviderId) {
       return;
     }
     const providerId = provider.providerId.trim();
     if (!providerId) {
       return;
     }
-    const providerIds = providerActiveQueryProviderIDs(provider, clis, vendors);
+    const providerIds = providerQuotaQueryProviderIDs(provider, clis, vendors);
     if (providerIds.length === 0) {
-      setObservabilityProbeError("This provider does not expose active query observability.");
-      setObservabilityProbeMessage("");
+      setProviderActionError("This provider does not expose quota query observability.");
+      setProviderActionMessage("");
       return;
     }
     setProbingProviderId(providerId);
-    setObservabilityProbeError("");
-    setObservabilityProbeMessage("");
+    setProviderActionError("");
+    setProviderActionMessage("");
     try {
-      setObservabilityProbeMessage(formatProviderObservabilityProbeSummary(
+      setProviderActionMessage(formatProviderObservabilityProbeSummary(
         await probeProvidersObservability(providerIds),
       ));
       await mutateProviderObservability(providerId);
       await mutateProviderObservability();
     } catch (error) {
-      setObservabilityProbeError(requestErrorMessage(error, "Failed to run provider active query."));
+      setProviderActionError(requestErrorMessage(error, "Failed to run provider quota query."));
     } finally {
       setProbingProviderId("");
+    }
+  };
+
+  const handleProbeProviderModelCatalog = async (provider: ProviderView) => {
+    if (isRefreshingQuota || probingProviderId || probingModelCatalogProviderId) {
+      return;
+    }
+    const providerId = provider.providerId.trim();
+    if (!providerId) {
+      return;
+    }
+    if (!providerSupportsModelCatalogProbe(provider, surfaces)) {
+      setProviderActionError("This provider does not expose model catalog probing.");
+      setProviderActionMessage("");
+      return;
+    }
+    setProbingModelCatalogProviderId(providerId);
+    setProviderActionError("");
+    setProviderActionMessage("");
+    try {
+      const response = await probeProviderModelCatalog(providerId);
+      setProviderActionMessage(response.message?.trim() || "Provider model catalog probe completed");
+      await mutate();
+    } catch (error) {
+      setProviderActionError(requestErrorMessage(error, "Failed to probe provider model catalog."));
+    } finally {
+      setProbingModelCatalogProviderId("");
     }
   };
 
@@ -186,15 +217,17 @@ export function useProvidersPageController() {
     isLoading,
     blockingError,
     clis,
-
+    productInfos,
+    surfaces,
     vendors,
     isAddDialogOpen,
     preferredAddKind,
     selectedProvider,
     isRefreshingQuota,
     probingProviderId,
-    observabilityProbeMessage,
-    observabilityProbeError,
+    probingModelCatalogProviderId,
+    providerActionMessage,
+    providerActionError,
     providerStatusEventsError,
     providerWorkflowStatuses,
     mutateProviders: mutate,
@@ -204,7 +237,8 @@ export function useProvidersPageController() {
     handleConnected,
     handleAdd,
     handleRefreshQuota,
-    handleProbeProviderActiveQuery,
+    handleProbeProviderQuotaQuery,
+    handleProbeProviderModelCatalog,
     openProvider,
     closeProvider,
     dismissedConnectSessionIDRef,

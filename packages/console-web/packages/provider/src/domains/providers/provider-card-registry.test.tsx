@@ -26,6 +26,10 @@ describe("provider-card-registry", () => {
     expect(resolveProviderCardRenderer({ kind: "vendor", vendorId: "google" })).not.toBeNull();
   });
 
+  it("returns mistral renderer for supported mistral owner", () => {
+    expect(resolveProviderCardRenderer({ kind: "vendor", vendorId: "mistral" })).not.toBeNull();
+  });
+
   it("normalizes vendor owner id when resolving renderer", () => {
     expect(resolveProviderCardRenderer({ kind: "vendor", vendorId: "  MiNiMaX  " })).not.toBeNull();
   });

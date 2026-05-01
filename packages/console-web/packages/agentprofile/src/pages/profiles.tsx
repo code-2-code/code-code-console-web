@@ -23,7 +23,7 @@ import {
   saveSkillResourceDraft,
 } from "../domain/profile-resource-actions";
 import { createAgentProfile, deleteAgentProfile, mutateAgentProfiles, updateAgentProfile, useAgentProfile, useAgentProfiles } from "../domain/profile-api";
-import { useCLIReferences, useProviders, useSessionRuntimeOptions, useVendors } from "../domain/reference-data";
+import { useCLIReferences, useProductInfos, useProviders, useProviderSurfaces, useSessionRuntimeOptions } from "../domain/reference-data";
 import { useRules, useSkills } from "../domain/text-resource-api";
 
 export function ProfilesPage() {
@@ -34,8 +34,9 @@ export function ProfilesPage() {
 
   const profiles = useAgentProfiles();
   const editingProfileQuery = useAgentProfile(creatingProfile ? undefined : editingProfileId || undefined);
-  const vendors = useVendors();
   const providersList = useProviders();
+  const providerSurfaces = useProviderSurfaces();
+  const productInfos = useProductInfos();
   const clis = useCLIReferences();
   const sessionRuntimeOptions = useSessionRuntimeOptions();
   const mcpList = useMCPServers();
@@ -46,8 +47,14 @@ export function ProfilesPage() {
     if (creatingProfile || !editingProfileQuery.profile) {
       return null;
     }
-    return agentProfileToDraft(editingProfileQuery.profile, providersList.providers, vendors.vendors, sessionRuntimeOptions.sessionRuntimeOptions);
-  }, [creatingProfile, editingProfileQuery.profile, providersList.providers, sessionRuntimeOptions.sessionRuntimeOptions, vendors.vendors]);
+    return agentProfileToDraft(
+      editingProfileQuery.profile,
+      providersList.providers,
+      providerSurfaces.surfaces,
+      productInfos.productInfos,
+      sessionRuntimeOptions.sessionRuntimeOptions,
+    );
+  }, [creatingProfile, editingProfileQuery.profile, productInfos.productInfos, providerSurfaces.surfaces, providersList.providers, sessionRuntimeOptions.sessionRuntimeOptions]);
 
   const mcps = useMemo(() => mcpList.mcps.map(mcpListItemToSummary), [mcpList.mcps]);
   const skills = useMemo(() => skillList.skills.map(skillListItemToSummary), [skillList.skills]);
@@ -59,7 +66,7 @@ export function ProfilesPage() {
     }
   };
 
-  const pageError = mcpList.error || skillList.error || ruleList.error || vendors.error || providersList.error || clis.error || sessionRuntimeOptions.error;
+  const pageError = mcpList.error || skillList.error || ruleList.error || providersList.error || providerSurfaces.error || productInfos.error || clis.error || sessionRuntimeOptions.error;
 
   return (
     <Flex direction="column" gap="4">
@@ -106,7 +113,8 @@ export function ProfilesPage() {
                       clis={clis.clis}
                       sessionRuntimeOptions={sessionRuntimeOptions.sessionRuntimeOptions}
                       providers={providersList.providers}
-                      vendors={vendors.vendors}
+                      surfaces={providerSurfaces.surfaces}
+                      productInfos={productInfos.productInfos}
                       mcps={mcps}
                       skills={skills}
                       rules={rules}
@@ -163,7 +171,8 @@ export function ProfilesPage() {
         clis={clis.clis}
         sessionRuntimeOptions={sessionRuntimeOptions.sessionRuntimeOptions}
         providers={providersList.providers}
-        vendors={vendors.vendors}
+        surfaces={providerSurfaces.surfaces}
+        productInfos={productInfos.productInfos}
         mcps={mcps}
         skills={skills}
         rules={rules}

@@ -18,6 +18,8 @@ type MutableGoogleAIStudioQuotaRow = {
   quotaType: string;
   quotaLabel: string;
   quotaOrder: number;
+  resource: string;
+  window: string;
   value: number;
   remainingValue: number | null;
   resetAtSeconds: number | null;
@@ -27,7 +29,7 @@ const googleAIStudioQuotaLimitMetric = "gen_ai.provider.quota.limit";
 const googleAIStudioQuotaRemainingMetric = "gen_ai.provider.quota.remaining";
 const googleAIStudioQuotaResetTimestampMetric = "gen_ai.provider.quota.reset.timestamp.seconds";
 const googleAIStudioSupportedModelCategories = new Set(["text_output", "gemma"]);
-const googleAIStudioVisibleQuotaTypes = new Set(["RPD"]);
+const googleAIStudioVisibleWindows = new Set(["day"]);
 const googleAIStudioMaxVisibleRows = 5;
 
 export function readGoogleAIStudioQuotaSummary(
@@ -79,7 +81,7 @@ function readGoogleAIStudioQuotaRows(
   }
   const sortedRows = Array.from(rowsByID.values()).sort(compareGoogleAIStudioQuotaRows);
   const visibleRows = sortedRows
-    .filter((row) => googleAIStudioVisibleQuotaTypes.has(row.quotaType))
+    .filter((row) => googleAIStudioVisibleWindows.has(row.window))
     .slice(0, googleAIStudioMaxVisibleRows);
   let previousModelID = "";
   return visibleRows.map((row) => {
@@ -122,6 +124,8 @@ function googleAIStudioQuotaDescriptor(metricRow: ProviderRuntimeMetricRow): Mut
     quotaType,
     quotaLabel,
     quotaOrder: quotaLabelOrder(quotaType || quotaLabel),
+    resource,
+    window,
     value: metricRow.value || 0,
     remainingValue: null,
     resetAtSeconds: null,
@@ -161,18 +165,31 @@ function quotaModelLabel(modelId: string, previewRaw: string | undefined) {
 }
 
 function normalizeQuotaLabel(labels: Record<string, string> | undefined) {
-  const quotaType = normalizeQuotaType(labels?.quota_type, labels?.resource, labels?.window);
-  if (quotaType) {
-    return quotaType;
-  }
   const resource = (labels?.resource || "").trim();
   const window = (labels?.window || "").trim();
+
   if (resource && window) {
-    return `${capitalize(resource)}/${capitalize(window)}`;
+    return capitalize(resource);
   }
   if (resource) {
     return capitalize(resource);
   }
+
+  const quotaType = normalizeQuotaType(labels?.quota_type, labels?.resource, labels?.window);
+  if (quotaType) {
+    switch (quotaType) {
+      case "RPM": return "Requests";
+      case "TPM": return "Tokens";
+      case "RPD": return "Requests";
+      case "TPD": return "Tokens";
+      case "IPM": return "Images";
+      case "IPD": return "Images";
+      case "VPM": return "Videos";
+      case "VPD": return "Videos";
+      default: return quotaType;
+    }
+  }
+
   if (window) {
     return capitalize(window);
   }

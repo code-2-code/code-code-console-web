@@ -8,16 +8,16 @@ describe("model filter helpers", () => {
     expect(filter.query).toBe("claude");
   });
 
-  it("includes source and badge in structured filter", () => {
-    const filter = buildStructuredFilter(["openai"], "gpt-5", ["nvidia-integrate"], "free");
+  it("includes source and category in structured filter", () => {
+    const filter = buildStructuredFilter(["openai"], "gpt-5", ["nvidia-integrate"], "text-generation");
     expect(filter.vendorIds).toEqual(["openai"]);
     expect(filter.query).toBe("gpt-5");
     expect(filter.sourceIds).toEqual(["nvidia-integrate"]);
-    expect(filter.badge).toBe("free");
+    expect(filter.category).toBe("text-generation");
   });
 
   it("builds structured filter with lifecycle exclusion", () => {
-    const filter = buildStructuredFilter([], "", [], "", "", true);
+    const filter = buildStructuredFilter([], "", [], "", true);
     expect(filter.lifecycleStatusExclude).toEqual(["deprecated", "eol", "blocked"]);
   });
 

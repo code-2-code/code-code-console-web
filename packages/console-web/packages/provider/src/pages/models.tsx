@@ -18,11 +18,10 @@ export function ModelsPage() {
   const resultCount = state.models.totalCount > 0 ? state.models.totalCount : loadedCount;
   const activeFilterCount = useMemo(() => {
     let count = state.vendorIds.length + state.sourceIds.length;
-    if (state.availabilityFilter !== "") count += 1;
     if (state.selectedCategory !== "") count += 1;
     if (state.modelQuery.trim() !== "") count += 1;
     return count;
-  }, [state.vendorIds, state.sourceIds, state.availabilityFilter, state.selectedCategory, state.modelQuery]);
+  }, [state.vendorIds, state.sourceIds, state.selectedCategory, state.modelQuery]);
   const hasActiveFilters = activeFilterCount > 0;
   const resultSummary = state.models.isLoading
     ? "Loading model registry..."
@@ -87,8 +86,6 @@ export function ModelsPage() {
 
         <Box style={{ flex: "1 1 0", minWidth: 0 }}>
           <ModelActiveFilters
-            availabilityFilter={state.availabilityFilter}
-            onAvailabilityClear={() => state.handleAvailabilityChange("")}
             onCategoryClear={() => state.handleCategoryChange("")}
             onClearAll={state.handleClearAllFilters}
             onModelQueryClear={state.handleModelQueryClear}
@@ -111,6 +108,8 @@ export function ModelsPage() {
                 models={state.models.models}
                 selectedSourceIds={state.sourceIds}
                 vendorsById={state.vendorsById}
+                productInfos={state.productInfos}
+                supportVendors={state.supportVendors}
                 hasActiveFilters={hasActiveFilters}
                 onClearFilters={state.handleClearAllFilters}
               />
@@ -119,6 +118,8 @@ export function ModelsPage() {
                 models={state.models.models}
                 selectedSourceIds={state.sourceIds}
                 vendorsById={state.vendorsById}
+                productInfos={state.productInfos}
+                supportVendors={state.supportVendors}
                 hasActiveFilters={hasActiveFilters}
                 onClearFilters={state.handleClearAllFilters}
               />
@@ -161,7 +162,7 @@ function MobileFiltersDialog({
       <Dialog.Content maxWidth="420px">
         <Dialog.Title>Filters</Dialog.Title>
         <Dialog.Description color="gray" size="2">
-          Narrow models by vendor, service, and availability.
+          Narrow models by vendor and service.
         </Dialog.Description>
         <Box mt="4">
           <ModelFacetControls state={state} sticky={false} />
@@ -180,8 +181,6 @@ function ModelFacetControls({
 }) {
   return (
     <ModelFacetSidebar
-      availabilityFilter={state.availabilityFilter}
-      onAvailabilityChange={state.handleAvailabilityChange}
       onSourceClear={state.handleSourceClear}
       onSourceToggle={state.handleSourceToggle}
       onVendorClear={state.handleVendorClear}

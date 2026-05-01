@@ -1,6 +1,6 @@
 import { create, fromJson, type JsonValue } from "@bufbuild/protobuf";
 import { AgentResourcesSchema, InstructionKind, ToolKind } from "@code-code/agent-contract/agent/v1/cap";
-import { ProviderRuntimeRefSchema } from "@code-code/agent-contract/provider/v1";
+import { ProviderEndpointSchema } from "@code-code/agent-contract/provider/v1";
 import { AgentProfileSchema, type AgentFallbackCandidate } from "@code-code/agent-contract/platform/agent-profile/v1";
 import {
   AgentSessionRuntimeFallbackCandidateSchema,
@@ -28,7 +28,7 @@ export async function importInlineSetupFromProfile(profileId: string): Promise<C
   );
   const selection = profile.selectionStrategy;
   const primary = selection?.fallbacks[0];
-  if (!selection || !primary?.providerRuntimeRef) {
+  if (!selection || !primary?.endpoint) {
     throw new Error("Selected profile is missing a primary runtime candidate.");
   }
 
@@ -42,7 +42,8 @@ export async function importInlineSetupFromProfile(profileId: string): Promise<C
     providerId: selection.providerId,
     executionClass: selection.executionClass,
     runtimeConfig: create(AgentSessionRuntimeConfigSchema, {
-      providerRuntimeRef: create(ProviderRuntimeRefSchema, primary.providerRuntimeRef),
+      providerId: primary.providerId,
+      endpoint: create(ProviderEndpointSchema, primary.endpoint),
       primaryModelSelector: runtimeModelSelector(primary),
       fallbacks: selection.fallbacks.slice(1).map(runtimeFallbackCandidate),
     }),
@@ -108,12 +109,14 @@ function runtimeModelSelector(candidate: AgentFallbackCandidate): AgentSessionRu
 function runtimeFallbackCandidate(candidate: AgentFallbackCandidate): AgentSessionRuntimeFallbackCandidate {
   if (candidate.modelSelector.case === "modelRef") {
     return create(AgentSessionRuntimeFallbackCandidateSchema, {
-      providerRuntimeRef: create(ProviderRuntimeRefSchema, candidate.providerRuntimeRef),
+      providerId: candidate.providerId,
+      endpoint: candidate.endpoint ? create(ProviderEndpointSchema, candidate.endpoint) : undefined,
       modelSelector: { case: "modelRef", value: candidate.modelSelector.value },
     });
   }
   return create(AgentSessionRuntimeFallbackCandidateSchema, {
-    providerRuntimeRef: create(ProviderRuntimeRefSchema, candidate.providerRuntimeRef),
+    providerId: candidate.providerId,
+    endpoint: candidate.endpoint ? create(ProviderEndpointSchema, candidate.endpoint) : undefined,
     modelSelector: createProviderFallbackModelSelector(candidate.modelSelector.value || ""),
   });
 }

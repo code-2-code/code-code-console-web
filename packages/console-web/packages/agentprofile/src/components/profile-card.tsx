@@ -5,7 +5,8 @@ import { FallbackChainPreview } from "./fallback-chain";
 import { agentProfileToDraft, resolveCLI } from "../domain/profile-adapters";
 import { useAgentProfile } from "../domain/profile-api";
 import type { AgentProfileListItem, ProviderView } from "@code-code/agent-contract/platform/management/v1";
-import type { VendorView } from "@code-code/agent-contract/platform/provider/v1";
+import type { ProductInfo } from "@code-code/agent-contract/product-info/v1";
+import type { Surface } from "@code-code/agent-contract/platform/support/v1";
 import type { CLIReference, MCPResourceSummary, SessionRuntimeOptions, TextResourceSummary } from "../domain/types";
 import { ActionIconButton, AsyncState, ConfirmActionButton, NoDataCallout, SoftBadge } from "@code-code/console-web-ui";
 
@@ -14,7 +15,8 @@ type ProfileCardProps = {
   clis: CLIReference[];
   sessionRuntimeOptions: SessionRuntimeOptions;
   providers: ProviderView[];
-  vendors: VendorView[];
+  surfaces: Surface[];
+  productInfos: ProductInfo[];
   mcps: MCPResourceSummary[];
   skills: TextResourceSummary[];
   rules: TextResourceSummary[];
@@ -22,9 +24,9 @@ type ProfileCardProps = {
   onDelete: (profileId: string) => Promise<void>;
 };
 
-export function ProfileCard({ item, clis, sessionRuntimeOptions, providers, vendors, mcps, skills, rules, onEdit, onDelete }: ProfileCardProps) {
+export function ProfileCard({ item, clis, sessionRuntimeOptions, providers, surfaces, productInfos, mcps, skills, rules, onEdit, onDelete }: ProfileCardProps) {
   const { profile, isLoading, isError } = useAgentProfile(item.profileId);
-  const draft = profile ? agentProfileToDraft(profile, providers, vendors, sessionRuntimeOptions) : null;
+  const draft = profile ? agentProfileToDraft(profile, providers, surfaces, productInfos, sessionRuntimeOptions) : null;
   const cli = resolveCLI(draft?.selectionStrategy.cliId || item.providerId, clis);
   const resourceTags = draft
     ? [

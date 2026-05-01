@@ -5,7 +5,6 @@ export function buildStructuredFilter(
   vendorIds: string[],
   modelQuery: string,
   sourceIds: string[] = [],
-  badge = "",
   category = "",
   hideDeprecated = false,
 ): ModelListFilter {
@@ -13,7 +12,6 @@ export function buildStructuredFilter(
     vendorIds: vendorIds.length > 0 ? vendorIds : undefined,
     query: modelQuery.trim() || undefined,
     sourceIds: sourceIds.length > 0 ? sourceIds : undefined,
-    badge: badge.trim() || undefined,
     category: category.trim() || undefined,
     lifecycleStatusExclude: hideDeprecated ? ["deprecated", "eol", "blocked"] : undefined,
   });

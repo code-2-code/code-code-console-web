@@ -1,18 +1,13 @@
-import type { ProviderModelCatalog } from "@code-code/agent-contract/provider/v1";
+import type { ProviderModel } from "@code-code/agent-contract/provider/v1";
 import { Flex } from "@radix-ui/themes";
 import { NoDataCallout, SoftBadge } from "@code-code/console-web-ui";
-import { describeProviderModelCatalogEntry } from "../provider-model-presentation";
+import { describeProviderModel } from "../provider-model-presentation";
 
 type Props = {
-  catalog?: ProviderModelCatalog;
+  models?: ProviderModel[];
 };
 
-export function ProviderModelCatalogBadges({ catalog }: Props) {
-  if (!catalog) {
-    return null;
-  }
-
-  const models = catalog.models ?? [];
+export function ProviderModelBadges({ models = [] }: Props) {
   if (!models.length) {
     return <NoDataCallout size="1">No provider models.</NoDataCallout>;
   }
@@ -20,7 +15,7 @@ export function ProviderModelCatalogBadges({ catalog }: Props) {
   return (
     <Flex wrap="wrap" gap="2">
       {models.map((model) => {
-        const presentation = describeProviderModelCatalogEntry(model);
+        const presentation = describeProviderModel(model);
         return (
           <SoftBadge
             key={presentation.key}

@@ -3,18 +3,23 @@ import {
   ListCLIsResponseSchema,
   ListVendorsResponseSchema,
   type CLI,
+  type Surface,
   type Vendor
 } from "@code-code/agent-contract/platform/support/v1";
 import {
   ListProviderSurfacesResponseSchema,
 } from "@code-code/agent-contract/platform/management/v1";
-import type { ProviderSurface } from "@code-code/agent-contract/provider/v1";
+import {
+  ListProductInfosResponseSchema,
+} from "@code-code/agent-contract/platform/support/v1";
+import type { ProductInfo } from "@code-code/agent-contract/product-info/v1";
 import useSWR from "swr";
 import { jsonFetcher, protobufJsonReadOptions } from "@code-code/console-web-ui";
 
 const vendorsPath = "/api/support/vendors";
 const clisPath = "/api/support/clis";
 const providerSurfacesPath = "/api/providers/surfaces";
+const productInfosPath = "/api/support/product-infos";
 
 export type ManualCredentialVendorOption = {
   vendorId: string;
@@ -46,11 +51,23 @@ export function useProviderCLIs() {
   };
 }
 
+export function useProductInfos() {
+  const { data, error, isLoading, mutate } = useSWR<JsonValue>(productInfosPath, jsonFetcher<JsonValue>);
+  const response = data ? fromJson(ListProductInfosResponseSchema, data, protobufJsonReadOptions) : undefined;
+  return {
+    productInfos: response?.items || ([] as ProductInfo[]),
+    error,
+    isLoading,
+    isError: !!error,
+    mutate
+  };
+}
+
 export function useProviderSurfaces() {
   const { data, error, isLoading, mutate } = useSWR<JsonValue>(providerSurfacesPath, jsonFetcher<JsonValue>);
   const response = data ? fromJson(ListProviderSurfacesResponseSchema, data, protobufJsonReadOptions) : undefined;
   return {
-    surfaces: response?.items || ([] as ProviderSurface[]),
+    surfaces: response?.items || ([] as Surface[]),
     error,
     isLoading,
     isError: !!error,
@@ -60,7 +77,7 @@ export function useProviderSurfaces() {
 
 export function listManualCredentialVendorOptions(vendors: Vendor[]): ManualCredentialVendorOption[] {
   return vendors
-    .filter((item) => Boolean(item.vendor?.vendorId) && item.providerBindings.some((binding) => binding.surfaceTemplates.length > 0))
+    .filter((item) => Boolean(item.vendor?.vendorId) && item.surfaces.some((surface) => surface.spec.case === "api"))
     .map((item) => ({
       vendorId: item.vendor!.vendorId,
       displayName: item.vendor!.displayName || item.vendor!.vendorId,

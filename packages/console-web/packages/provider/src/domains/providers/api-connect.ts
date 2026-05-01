@@ -14,29 +14,31 @@ import { jsonFetcher, jsonRequest, protobufJsonReadOptions } from "@code-code/co
 import {
   type ConnectProviderWithCustomAPIKeyDraft,
   type ConnectProviderWithOAuthDraft,
-  type ConnectProviderWithVendorAPIKeyDraft,
+  type ConnectProviderWithSurfaceAPIKeyDraft,
 } from "./api-types";
 
 const providerConnectPath = "/api/providers/connect";
 
-export async function connectProviderWithVendorAPIKey(draft: ConnectProviderWithVendorAPIKeyDraft): Promise<ConnectProviderResponse> {
+export async function connectProviderWithSurfaceAPIKey(draft: ConnectProviderWithSurfaceAPIKeyDraft): Promise<ConnectProviderResponse> {
   const request = create(ConnectProviderRequestSchema, {
     addMethod: ProviderAddMethod.API_KEY,
-    vendorId: draft.vendorId,
+    surfaceId: draft.surfaceId,
     displayName: draft.displayName ?? "",
     authMaterial: {
       case: "apiKey",
       value: {
         apiKey: draft.apiKey,
+        baseUrl: draft.baseUrl ?? "",
       },
     },
   });
-  return postConnectProvider(request);
+  return submitConnectProvider(request);
 }
 
 export async function connectProviderWithCustomAPIKey(draft: ConnectProviderWithCustomAPIKeyDraft): Promise<ConnectProviderResponse> {
   const request = create(ConnectProviderRequestSchema, {
     addMethod: ProviderAddMethod.API_KEY,
+    surfaceId: draft.surfaceId,
     displayName: draft.displayName ?? "",
     authMaterial: {
       case: "apiKey",
@@ -47,13 +49,13 @@ export async function connectProviderWithCustomAPIKey(draft: ConnectProviderWith
       },
     },
   });
-  return postConnectProvider(request);
+  return submitConnectProvider(request);
 }
 
 export async function connectProviderWithOAuth(draft: ConnectProviderWithOAuthDraft): Promise<ConnectProviderResponse> {
   const request = create(ConnectProviderRequestSchema, {
     addMethod: ProviderAddMethod.CLI_OAUTH,
-    cliId: draft.cliId,
+    surfaceId: draft.surfaceId,
     displayName: draft.displayName ?? "",
     authMaterial: {
       case: "cliOauth",
@@ -81,7 +83,7 @@ export function useProviderConnectSession(sessionId?: string) {
   };
 }
 
-async function postConnectProvider(request: ConnectProviderRequest): Promise<ConnectProviderResponse> {
+async function submitConnectProvider(request: ConnectProviderRequest): Promise<ConnectProviderResponse> {
   const data = await jsonRequest<JsonValue>(providerConnectPath, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

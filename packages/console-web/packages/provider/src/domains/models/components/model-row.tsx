@@ -1,5 +1,6 @@
-import type { VendorView } from "@code-code/agent-contract/platform/provider/v1";
 import type { ModelRegistryEntry } from "@code-code/agent-contract/platform/model/v1";
+import type { ProductInfo } from "@code-code/agent-contract/product-info/v1";
+import type { Vendor } from "@code-code/agent-contract/platform/support/v1";
 import { Code, Flex, Table, Text } from "@radix-ui/themes";
 import { SoftBadge } from "@code-code/console-web-ui";
 import { SourceBadge } from "./source-badge";
@@ -13,12 +14,15 @@ import { modelServiceLabelViews } from "./model-service-labels";
 import { VendorAvatar } from "./vendor-avatar";
 import { formatSourcePricing } from "../source-pricing";
 import type { ModelVersion } from "@code-code/agent-contract/model/v1";
+import { resolveProductInfo } from "../../providers/provider-product-info";
 
 type ModelRowProps = {
   model: ModelRegistryEntry;
-  vendor?: VendorView;
-  vendorsById: Record<string, VendorView>;
+  vendor?: Vendor;
+  vendorsById: Record<string, Vendor>;
   selectedSourceIds: string[];
+  productInfos?: ProductInfo[];
+  supportVendors?: Vendor[];
 };
 
 export function ModelRow({
@@ -26,11 +30,14 @@ export function ModelRow({
   vendor,
   vendorsById,
   selectedSourceIds,
+  productInfos,
+  supportVendors,
 }: ModelRowProps) {
   const definition = model.definition;
   if (!definition) return null;
   const displayName = definition.displayName || definition.modelId;
-  const vendorLabel = vendor?.displayName || getVendorLabel(definition);
+  const resolvedProductInfo = resolveProductInfo(definition.vendorId, productInfos, supportVendors);
+  const vendorLabel = resolvedProductInfo?.displayName || vendor?.vendor?.displayName || getVendorLabel(definition);
   const showSeparateModelId = definition.displayName && definition.displayName !== definition.modelId;
   const pricingSummary = formatSourcePricing(model.pricing);
   const serviceLabels = modelServiceLabelViews(model.sources, selectedSourceIds);
@@ -43,7 +50,7 @@ export function ModelRow({
         <Flex direction="column" gap="1">
           <Text weight="medium">{displayName}</Text>
           <Flex align="center" gap="2" wrap="wrap">
-            <VendorAvatar displayName={vendorLabel} iconUrl={vendor?.iconUrl} size="1" />
+            <VendorAvatar displayName={vendorLabel} iconUrl={resolvedProductInfo?.iconUrl} size="1" />
             {showSeparateModelId ? (
               <Code size="1" variant="ghost" color="gray">{definition.modelId}</Code>
             ) : (

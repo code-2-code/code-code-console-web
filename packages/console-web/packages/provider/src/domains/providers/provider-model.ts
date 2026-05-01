@@ -1,10 +1,11 @@
-import { ProviderSurfaceKind } from "@code-code/agent-contract/provider/v1";
+import { ProviderEndpointType, type ProviderEndpoint } from "@code-code/agent-contract/provider/v1";
 import type { ProviderView } from "@code-code/agent-contract/platform/management/v1";
 import { ProviderPhase } from "@code-code/agent-contract/platform/provider/v1/shared";
 import { providerAuthenticationLabel } from "./provider-authentication-presentation";
-import { providerSurfaceRuntimeKind, providerSurfaceRuntimeProtocol } from "./provider-runtime-presentation";
+import { providerEndpointKind, providerEndpointProtocol } from "./provider-endpoint-presentation";
 import { providerStatusReason } from "./provider-status-view";
 import { providerProtocolLabel } from "./provider-protocol-presentation-store";
+import type { ProviderProtocolValue } from "./provider-protocol";
 
 type ProviderStatusColor = "green" | "red" | "amber" | "gray";
 
@@ -25,7 +26,7 @@ export interface ProviderModel {
   modelCount(): number;
   modelsSummary(): string;
   operationalSummary(): string;
-  primarySurface(): ProviderView | undefined;
+  primaryEndpoint(): ProviderEndpoint | undefined;
   primarySurfaceId(): string;
 
 
@@ -40,14 +41,15 @@ class DefaultProviderModel implements ProviderModel {
   }
 
   authenticationKind() {
-    return providerSurfaceRuntimeKind(this.raw.runtime) === ProviderSurfaceKind.CLI ? "cliOAuth" : "apiKey";
+    return this.primaryEndpointKind() === ProviderEndpointType.CLI ? "cliOAuth" : "apiKey";
   }
 
   authenticationLabel() {
-    if (!this.raw.runtime) {
+    const endpoint = this.primaryEndpoint();
+    if (!endpoint) {
       return "Unknown Auth";
     }
-    return providerAuthenticationLabel(providerSurfaceRuntimeKind(this.raw.runtime));
+    return providerAuthenticationLabel(providerEndpointKind(endpoint));
   }
 
   displayName() {
@@ -56,15 +58,16 @@ class DefaultProviderModel implements ProviderModel {
   }
 
   protocolLabels() {
-    const protocol = providerSurfaceRuntimeProtocol(this.raw.runtime);
-    if (!protocol) {
-      return [];
-    }
-    return [providerProtocolLabel(protocol)].filter(Boolean);
+    const protocols = new Set(
+      (this.raw.endpoints ?? [])
+        .map((endpoint) => providerEndpointProtocol(endpoint))
+        .filter((protocol): protocol is ProviderProtocolValue => Boolean(protocol)),
+    );
+    return [...protocols].map((protocol) => providerProtocolLabel(protocol)).filter(Boolean);
   }
 
   modelCount() {
-    return this.raw.modelCatalog?.models?.length ?? 0;
+    return this.raw.models?.length ?? 0;
   }
 
   modelsSummary() {
@@ -79,15 +82,19 @@ class DefaultProviderModel implements ProviderModel {
     return this.modelsSummary();
   }
 
-  primarySurface() {
-    if (!this.raw.surfaceId && !this.raw.runtime) {
+  primaryEndpoint() {
+    if ((this.raw.endpoints ?? []).length === 0) {
       return undefined;
     }
-    return this.raw;
+    return this.raw.endpoints[0];
   }
 
   primarySurfaceId() {
     return this.raw.surfaceId || "";
+  }
+
+  private primaryEndpointKind() {
+    return providerEndpointKind(this.primaryEndpoint());
   }
 
 

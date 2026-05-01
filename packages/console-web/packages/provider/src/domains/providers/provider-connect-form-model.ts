@@ -1,10 +1,10 @@
 import {
   isAPIKeyConnectOption,
   isCLIOAuthConnectOption,
-  isVendorAPIKeyConnectOption,
+  isSurfaceAPIKeyConnectOption,
   type ProviderConnectOption,
 } from "./provider-connect-options";
-import { providerSurfaceRuntimeBaseURL, providerSurfaceRuntimeProtocol } from "./provider-runtime-presentation";
+import { defaultSurfaceTemplateValues } from "./provider-surface-template";
 import { providerProtocolLabel } from "./provider-protocol-presentation";
 import { ProviderProtocol } from "./provider-protocol";
 
@@ -31,6 +31,7 @@ export type ProviderConnectFormValues = {
   connectOptionId: string;
   displayName: string;
   protocol: string;
+  surfaceParameters: Record<string, string>;
 };
 
 export interface ProviderConnectFormModel {
@@ -68,15 +69,16 @@ class DefaultProviderConnectFormModel implements ProviderConnectFormModel {
 }
 
 export function defaultProviderConnectFormValues(preferredOption?: ProviderConnectOption): ProviderConnectFormValues {
-  const surface = isVendorAPIKeyConnectOption(preferredOption)
-    ? preferredOption.prefilledSurfaces[0]?.runtime
+  const surface = isSurfaceAPIKeyConnectOption(preferredOption)
+    ? preferredOption.prefilledSurfaces[0]
     : undefined;
   return {
     connectOptionId: preferredOption?.id ?? "",
     displayName: preferredOption?.displayName ?? "",
     apiKey: "",
-    baseUrl: providerSurfaceRuntimeBaseURL(surface),
-    protocol: String(providerSurfaceRuntimeProtocol(surface) ?? ProviderProtocol.OPENAI_COMPATIBLE),
+    baseUrl: surface?.baseUrl ?? "",
+    protocol: String(surface?.protocol ?? ProviderProtocol.OPENAI_COMPATIBLE),
+    surfaceParameters: defaultSurfaceTemplateValues(surface?.baseUrl ?? ""),
   };
 }
 

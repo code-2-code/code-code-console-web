@@ -1,3 +1,5 @@
+import type { ProviderEndpoint } from "@code-code/agent-contract/provider/v1";
+
 export type MCPTransport = "stdio" | "streamable-http";
 
 export type FallbackAvailability = "available" | "degraded" | "unavailable";
@@ -21,6 +23,14 @@ export type SessionRuntimeProviderOption = {
   providerId: string;
   label: string;
   executionClasses: string[];
+  surfaces: SessionRuntimeSurfaceOption[];
+};
+
+export type SessionRuntimeSurfaceOption = {
+  providerId: string;
+  label: string;
+  models: string[];
+  endpoint?: ProviderEndpoint;
 };
 
 export type SessionRuntimeOptions = {
@@ -32,8 +42,9 @@ export const EMPTY_SESSION_RUNTIME_OPTIONS: SessionRuntimeOptions = { items: [] 
 export type SelectionFallback = {
   id: string;
   providerId: string;
-  vendorId: string;
-  vendorLabel: string;
+  endpoint?: ProviderEndpoint;
+  productId: string;
+  productLabel: string;
   providerLabel: string;
   providerIconUrl: string;
   providerType: ProviderType;
@@ -95,7 +106,9 @@ export type FallbackModelOption = {
 };
 
 export type FallbackSurfaceOption = {
+  id: string;
   providerId: string;
+  endpoint?: ProviderEndpoint;
   label: string;
   providerType: ProviderType;
   availability: FallbackAvailability;
@@ -104,9 +117,9 @@ export type FallbackSurfaceOption = {
 
 export type FallbackProviderOption = {
   id: string;
-  vendorId: string;
+  productId: string;
   label: string;
   iconUrl: string;
-  vendorLabel: string;
+  productLabel: string;
   surfaces: FallbackSurfaceOption[];
 };

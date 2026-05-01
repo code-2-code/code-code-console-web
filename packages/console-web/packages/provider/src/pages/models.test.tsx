@@ -101,6 +101,6 @@ describe("ModelsPage", () => {
 
     render(<MemoryRouter><Theme><ModelsPage /></Theme></MemoryRouter>);
 
-    expect(screen.getByText("Page 1 / 36")).toBeInTheDocument();
+    expect(screen.getByText("Page 1 of 36")).toBeInTheDocument();
   });
 });

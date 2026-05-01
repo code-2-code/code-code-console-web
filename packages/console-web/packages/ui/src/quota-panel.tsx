@@ -22,6 +22,7 @@ type QuotaPanelProps = {
   rows: readonly QuotaPanelRow[];
   meta?: ReactNode;
   controls?: ReactNode;
+  showAllRows?: boolean;
 };
 
 const defaultLoadingLines: readonly QuotaPanelSkeletonLine[] = [
@@ -32,8 +33,8 @@ const defaultLoadingLines: readonly QuotaPanelSkeletonLine[] = [
 
 const quotaPanelMaxRows = 5;
 
-export function QuotaPanel({ title = "Quota", rows, meta, controls }: QuotaPanelProps) {
-  const visibleRows = rows.slice(0, quotaPanelMaxRows);
+export function QuotaPanel({ title = "Quota", rows, meta, controls, showAllRows = false }: QuotaPanelProps) {
+  const visibleRows = showAllRows ? rows : rows.slice(0, quotaPanelMaxRows);
   const hiddenRowCount = Math.max(0, rows.length - visibleRows.length);
 
   return (

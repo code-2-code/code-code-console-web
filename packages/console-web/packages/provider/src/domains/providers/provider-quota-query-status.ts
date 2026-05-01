@@ -7,26 +7,26 @@ import { providerModel } from "./provider-model";
 import { resolveProviderOwnerObservabilityModel, type ProviderObservabilityOwner } from "./provider-owner-observability-model";
 import { resolveProviderObservabilityOwner } from "./provider-observability-visualization";
 
-type ProviderActiveQueryStatusSource = {
+type ProviderQuotaQueryStatusSource = {
   detail?: ProviderObservability;
   isLoading: boolean;
   isError: boolean;
 };
 
-export function useProviderActiveQueryStatus(provider: ProviderView | null, enabled: boolean) {
+export function useProviderQuotaQueryStatus(provider: ProviderView | null, enabled: boolean) {
   const providerID = enabled ? provider?.providerId?.trim() || "" : "";
   const { detail, isLoading, isError } = useProviderObservability(providerID || undefined, "1h", "status");
-  return useProviderActiveQueryStatusFromObservability(provider, enabled, {
+  return useProviderQuotaQueryStatusFromObservability(provider, enabled, {
     detail,
     isLoading,
     isError,
   });
 }
 
-export function useProviderActiveQueryStatusFromObservability(
+export function useProviderQuotaQueryStatusFromObservability(
   provider: ProviderView | null,
   enabled: boolean,
-  source: ProviderActiveQueryStatusSource,
+  source: ProviderQuotaQueryStatusSource,
   preferredOwner?: ProviderObservabilityOwner | null,
 ) {
   const providerViewModel = useMemo(() => (provider ? providerModel(provider) : null), [provider]);
@@ -48,11 +48,11 @@ export function useProviderActiveQueryStatusFromObservability(
       owner,
       owner.surfaceId || providerViewModel.primarySurfaceId(),
     );
-    return readProviderActiveQueryStatus(observability, owner, now);
+    return readProviderQuotaQueryStatus(observability, owner, now);
   }, [providerViewModel, enabled, now, owner, source.detail, source.isError, source.isLoading]);
 }
 
-export function readProviderActiveQueryStatus(
+export function readProviderQuotaQueryStatus(
   observability: ReturnType<typeof resolveProviderOwnerObservabilityModel>,
   owner: ProviderObservabilityOwner | null,
   now: Date = new Date(),
@@ -65,23 +65,23 @@ export function readProviderActiveQueryStatus(
   const lastProbeAt = observability.observedAtRelativeLabel(now) || observability.observedAtLabel(now, timeZone);
   switch (outcome) {
     case 1:
-      return buildProviderActiveQueryStatus("green", "Executed", lastProbeAt);
+      return buildProviderQuotaQueryStatus("green", "Executed", lastProbeAt);
     case 2:
       return null;
     case 3:
-      return buildProviderActiveQueryStatus("red", "Auth Blocked", lastProbeAt, authBlockedReason(observability, owner));
+      return buildProviderQuotaQueryStatus("red", "Auth Blocked", lastProbeAt, authBlockedReason(observability, owner));
     case 4:
-      return buildProviderActiveQueryStatus("gray", "Unsupported", lastProbeAt);
+      return buildProviderQuotaQueryStatus("gray", "Unsupported", lastProbeAt);
     case 5:
-      return buildProviderActiveQueryStatus("red", "Failed", lastProbeAt, probeFailureReason(observability));
+      return buildProviderQuotaQueryStatus("red", "Failed", lastProbeAt, probeFailureReason(observability));
   }
   if (lastProbeAt) {
-    return buildProviderActiveQueryStatus("amber", "Probe Unknown", lastProbeAt);
+    return buildProviderQuotaQueryStatus("amber", "Probe Unknown", lastProbeAt);
   }
   return { color: "gray", label: "No Probe", reason: "" };
 }
 
-function buildProviderActiveQueryStatus(
+function buildProviderQuotaQueryStatus(
   color: ProviderStatusView["color"],
   label: string,
   observedAtLabel: string | null,

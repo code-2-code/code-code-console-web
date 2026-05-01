@@ -1,7 +1,7 @@
 import {
-  ActiveQueryInputControl,
-  ActiveQueryInputPersistence,
-  ActiveQueryInputValueTransform,
+  QuotaQueryInputControl,
+  QuotaQueryInputPersistence,
+  QuotaQueryInputValueTransform,
 } from "@code-code/agent-contract/observability/v1";
 import type { Vendor } from "@code-code/agent-contract/platform/support/v1";
 import { describe, expect, it } from "vitest";
@@ -9,29 +9,18 @@ import { providerObservabilityAuthPresentation } from "./provider-observability-
 
 describe("provider observability auth presentation", () => {
   it("derives the form from vendor support metadata", () => {
-    const presentation = providerObservabilityAuthPresentation("mistral", [vendorWithForm()]);
+    const presentation = providerObservabilityAuthPresentation("mistral", [vendorWithForm()], "openai-compatible");
 
-    expect(presentation?.schemaId).toBe("mistral-billing-session");
-    expect(presentation?.fieldLabel).toBe("Session token");
-    expect(presentation?.providerActionLabel).toBe("Update Session Token");
-    expect(presentation?.requiredKeys).toEqual(["access_token"]);
+    expect(presentation?.schemaId).toBe("mistral-admin-billing-session");
+    expect(presentation?.fieldLabel).toBe("Request Cookie");
+    expect(presentation?.providerActionLabel).toBe("Update Admin Session");
+    expect(presentation?.requiredKeys).toEqual(["cookie"]);
     expect(presentation?.fields[0]).toMatchObject({
-      key: "access_token",
+      key: "cookie",
       sensitive: true,
-    persistence: ActiveQueryInputPersistence.STORED_MATERIAL,
+      persistence: QuotaQueryInputPersistence.STORED_MATERIAL,
     });
-  });
-
-  it("preserves transient transform metadata for generic form submission", () => {
-    const presentation = providerObservabilityAuthPresentation("mistral", [vendorWithForm()]);
-    const field = presentation?.fields.find((item) => item.key === "response_set_cookie");
-
-    expect(field).toMatchObject({
-      key: "response_set_cookie",
-      targetFieldId: "cookie",
-      transform: ActiveQueryInputValueTransform.MERGE_SET_COOKIE,
-      persistence: ActiveQueryInputPersistence.TRANSIENT,
-    });
+    expect(presentation?.fields).toHaveLength(1);
   });
 
   it("returns null when support metadata does not declare an input form", () => {
@@ -51,17 +40,17 @@ function vendorWithForm(): Vendor {
       websiteUrl: "",
       description: "",
     },
-    providerBindings: [{
-      $typeName: "platform.support.v1.VendorProviderBinding",
-      providerBinding: {
-        $typeName: "platform.management.v1.ProviderView",
-        surfaceId: "openai-compatible",
-        modelCatalogProbeId: "",
-        quotaProbeId: "",
-        egressPolicyId: "",
-        headerRewritePolicyId: "",
+    surfaces: [{
+      $typeName: "platform.support.v1.Surface",
+      surfaceId: "openai-compatible",
+      productInfoId: "mistral",
+      spec: {
+        case: "api",
+        value: {
+          $typeName: "platform.support.v1.ApiSurface",
+          apiEndpoints: [],
+        },
       },
-      surfaceTemplates: [],
       observability: {
         $typeName: "observability.v1.ObservabilityCapability",
         profiles: [{
@@ -72,59 +61,31 @@ function vendorWithForm(): Vendor {
           metrics: [],
           metricQueries: [],
           collection: {
-            case: "activeQuery",
+            case: "quotaQuery",
             value: {
-              $typeName: "observability.v1.ActiveQueryCollection",
+              $typeName: "observability.v1.QuotaQueryCollection",
               collectorId: "mistral-billing",
               dynamicParameters: [],
               credentialBackfills: [],
               inputForm: {
-                $typeName: "observability.v1.ActiveQueryInputForm",
-                schemaId: "mistral-billing-session",
-                title: "Update Mistral Session Token",
-                actionLabel: "Update Session Token",
-                description: "Paste the session token.",
+                $typeName: "observability.v1.QuotaQueryInputForm",
+                schemaId: "mistral-admin-billing-session",
+                title: "Update Mistral Admin Session",
+                actionLabel: "Update Admin Session",
+                description: "Paste the Mistral Admin browser Cookie request header.",
                 fields: [
                   {
-                    $typeName: "observability.v1.ActiveQueryInputField",
-                    fieldId: "access_token",
-                    label: "Session token",
-                    description: "",
-                    placeholder: "Paste session token",
-                    required: true,
-                    sensitive: true,
-                    control: ActiveQueryInputControl.PASSWORD,
-    persistence: ActiveQueryInputPersistence.STORED_MATERIAL,
-                    targetFieldId: "",
-                    transform: ActiveQueryInputValueTransform.IDENTITY,
-                    defaultValue: "",
-                  },
-                  {
-                    $typeName: "observability.v1.ActiveQueryInputField",
+                    $typeName: "observability.v1.QuotaQueryInputField",
                     fieldId: "cookie",
                     label: "Request Cookie",
                     description: "",
-                    placeholder: "Paste request Cookie header",
-                    required: false,
+                    placeholder: "ory_session_...=...; csrftoken=...",
+                    required: true,
                     sensitive: true,
-                    control: ActiveQueryInputControl.TEXTAREA,
-    persistence: ActiveQueryInputPersistence.STORED_MATERIAL,
+                    control: QuotaQueryInputControl.TEXTAREA,
+                    persistence: QuotaQueryInputPersistence.STORED_MATERIAL,
                     targetFieldId: "",
-                    transform: ActiveQueryInputValueTransform.IDENTITY,
-                    defaultValue: "",
-                  },
-                  {
-                    $typeName: "observability.v1.ActiveQueryInputField",
-                    fieldId: "response_set_cookie",
-                    label: "Response Set-Cookie",
-                    description: "",
-                    placeholder: "",
-                    required: false,
-                    sensitive: false,
-                    control: ActiveQueryInputControl.TEXTAREA,
-                    persistence: ActiveQueryInputPersistence.TRANSIENT,
-                    targetFieldId: "cookie",
-                    transform: ActiveQueryInputValueTransform.MERGE_SET_COOKIE,
+                    transform: QuotaQueryInputValueTransform.IDENTITY,
                     defaultValue: "",
                   },
                 ],

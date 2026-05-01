@@ -1,7 +1,7 @@
 export type {
   ConnectProviderWithCustomAPIKeyDraft,
   ConnectProviderWithOAuthDraft,
-  ConnectProviderWithVendorAPIKeyDraft,
+  ConnectProviderWithSurfaceAPIKeyDraft,
   ProviderObservability,
   ProviderModelRegistryBindingDraft,
   ProviderObservabilityProbeAllResponse,
@@ -14,15 +14,17 @@ export type {
 export {
   connectProviderWithOAuth,
   connectProviderWithCustomAPIKey,
-  connectProviderWithVendorAPIKey,
+  connectProviderWithSurfaceAPIKey,
   useProviderConnectSession,
 } from "./api-connect";
 
 export {
   deleteProvider,
+  probeProviderModelCatalog,
   updateProvider,
   updateProviderAuthentication,
   updateProviderObservabilityAuthentication,
+  useProviderAuthenticationSummary,
 } from "./api-provider";
 
 export {

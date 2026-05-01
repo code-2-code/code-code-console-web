@@ -9,7 +9,7 @@ import {
   sessionRuntimeExecutionClassSelectItems,
   sessionRuntimeProviderSelectItems,
   findSessionRuntimeProvider,
-  runtimeRefKey,
+  runtimeConfigSelectionKey,
   type SessionRuntimeOptions,
 } from "../session-runtime-options";
 
@@ -57,7 +57,7 @@ export function ChatInlineRuntimeEditor({
   }
 
   const selectedProvider = findSessionRuntimeProvider(runtimeOptions, draft.providerId);
-  const primarySurfaceValue = runtimeRefKey(draft.runtimeConfig.providerRuntimeRef);
+  const primarySurfaceValue = runtimeConfigSelectionKey(draft.runtimeConfig);
   const primaryModelId = runtimePrimaryModelId(draft.runtimeConfig.primaryModelSelector);
   const resourceSummary = `${draft.resourceConfig.instructions.length} instructions · ${draft.resourceConfig.toolBindings.length} MCP tools`;
 

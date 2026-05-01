@@ -4,7 +4,8 @@ import type { ProviderView } from "@code-code/agent-contract/platform/management
 import { ProviderConnectSessionPhase } from "@code-code/agent-contract/platform/provider/v1/shared";
 import {
   useProviderCLIs,
-  useProviderVendors,
+  useProductInfos,
+  useProviderSurfaces,
 } from "@code-code/console-web-credential";
 import { Dialog } from "@radix-ui/themes";
 import {
@@ -30,6 +31,7 @@ import {
   defaultProviderConnectFormValues,
   type ProviderConnectFormValues,
 } from "../provider-connect-form-model";
+import { cliIdForSurface } from "../provider-support-surface";
 
 type Props = {
   open: boolean;
@@ -48,11 +50,12 @@ export function AddProviderDialog({
   onConnectSessionChange,
   onConnected,
 }: Props) {
-  const { vendors, isLoading: isVendorLoading, isError: isVendorError, error: vendorError, mutate: mutateVendors } = useProviderVendors();
   const { clis, isLoading: isCLILoading, isError: isCLIError, error: cliError, mutate: mutateCLIs } = useProviderCLIs();
+  const { productInfos, isLoading: isProductInfoLoading, isError: isProductInfoError, error: productInfoError, mutate: mutateProductInfos } = useProductInfos();
+  const { surfaces, isLoading: isSurfacesLoading, isError: isSurfacesError, error: surfacesError, mutate: mutateSurfaces } = useProviderSurfaces();
   const connectOptions = useMemo(
-    () => listProviderConnectOptions(vendors, clis),
-    [clis, vendors]
+    () => listProviderConnectOptions(productInfos, surfaces, clis),
+    [productInfos, surfaces, clis]
   );
   const dialogModel = useMemo(
     () => providerConnectDialogModel(connectOptions, preferredOptionKind),
@@ -80,12 +83,12 @@ export function AddProviderDialog({
   });
   const { session, error: sessionError, isLoading: isSessionLoading, mutate: mutateSession } = useProviderConnectSession(localSessionId || undefined);
   const sessionCallbackDelivery = useMemo(() => {
-    const cliId = session?.cliId?.trim() || "";
+    const cliId = cliIdForSurface(surfaces, session?.surfaceId);
     if (!cliId) {
       return undefined;
     }
     return clis.find((item) => item.cliId === cliId)?.oauth?.codeFlow?.callbackDelivery;
-  }, [clis, session?.cliId]);
+  }, [clis, session?.surfaceId, surfaces]);
   const { reset: resetSessionTerminalState } = useProviderConnectSessionTerminal({
     sessionId: localSessionId || undefined,
     session,
@@ -98,7 +101,10 @@ export function AddProviderDialog({
       return onConnected(provider);
     },
   });
-  const connectOptionsError = resolveProviderConnectOptionsError(vendorError, cliError, isVendorError || isCLIError);
+  const connectOptionsError = resolveProviderConnectOptionsError(
+    [cliError, productInfoError, surfacesError],
+    isCLIError || isProductInfoError || isSurfacesError,
+  );
   const {
     handleDialogOpenChange,
     handleConnectOptionChange,
@@ -128,11 +134,12 @@ export function AddProviderDialog({
       <Dialog.Content maxWidth="560px">
         <Dialog.Title>{dialogCopy.title}</Dialog.Title>
         <ProviderConnectDialogBody
-          isLoading={isVendorLoading || isCLILoading}
+          isLoading={isCLILoading || isProductInfoLoading || isSurfacesLoading}
           optionsError={connectOptionsError}
           onRetry={() => {
-            void mutateVendors();
             void mutateCLIs();
+            void mutateProductInfos();
+            void mutateSurfaces();
           }}
           copy={dialogCopy}
           scopedConnectOptions={scopedConnectOptions}

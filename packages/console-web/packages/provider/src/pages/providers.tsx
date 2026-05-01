@@ -23,9 +23,9 @@ function ProviderAddActions({
       <Button size="2" variant="soft" color="gray" onClick={onRefreshQuota} disabled={refreshingQuota}>
         {refreshingQuota ? "Refreshing quota..." : "Refresh quota"}
       </Button>
-      <Button size="2" variant="solid" onClick={() => onAdd("vendorApiKey")}>
+      <Button size="2" variant="solid" onClick={() => onAdd("surfaceApiKey")}>
         <PlusIcon />
-        Vendor API Key
+        Provider API Key
       </Button>
       <Button size="2" variant="soft" onClick={() => onAdd("customApiKey")}>
         Custom API Key
@@ -86,10 +86,14 @@ export function ProvidersPage() {
           <ProviderDetailsDialog
             provider={page.selectedProvider}
             clis={page.clis}
+            productInfos={page.productInfos}
+            surfaces={page.surfaces}
             vendors={page.vendors}
             onClose={page.closeProvider}
             onUpdated={page.refreshProviderPageData}
-            onProbeActiveQuery={(provider) => void page.handleProbeProviderActiveQuery(provider)}
+            onProbeModelCatalog={(provider) => void page.handleProbeProviderModelCatalog(provider)}
+            onProbeQuotaQuery={(provider) => void page.handleProbeProviderQuotaQuery(provider)}
+            probingModelCatalogProviderId={page.probingModelCatalogProviderId}
             probingProviderId={page.probingProviderId}
           />
         </>
@@ -97,14 +101,18 @@ export function ProvidersPage() {
       <ProviderCardGrid
         providers={filteredProviders}
         clis={page.clis}
+        productInfos={page.productInfos}
+        surfaces={page.surfaces}
         vendors={page.vendors}
         loading={page.isLoading}
         error={page.blockingError}
         readonly={readonly}
         workflowStatuses={hasProviderIds ? page.providerWorkflowStatuses : undefined}
         probingProviderId={hasProviderIds ? page.probingProviderId : undefined}
+        probingModelCatalogProviderId={hasProviderIds ? page.probingModelCatalogProviderId : undefined}
         onOpen={hasProviderIds ? page.openProvider : undefined}
-        onProbeActiveQuery={hasProviderIds ? ((provider) => void page.handleProbeProviderActiveQuery(provider)) : undefined}
+        onProbeModelCatalog={hasProviderIds ? ((provider) => void page.handleProbeProviderModelCatalog(provider)) : undefined}
+        onProbeQuotaQuery={hasProviderIds ? ((provider) => void page.handleProbeProviderQuotaQuery(provider)) : undefined}
         onRetry={() => void page.mutateProviders()}
         subtitle={providerSummary}
         emptyTitle={providerQuery.trim() ? "No providers match this search." : "No providers."}
@@ -120,9 +128,9 @@ export function ProvidersPage() {
         )}
         headerCallouts={hasProviderIds ? (
           <>
-            <ErrorCalloutIf error={page.observabilityProbeError} mb="4" />
+            <ErrorCalloutIf error={page.providerActionError} mb="4" />
             <ErrorCalloutIf error={page.providerStatusEventsError} mb="4" />
-            {page.observabilityProbeMessage ? <NoDataCallout mb="4">{page.observabilityProbeMessage}</NoDataCallout> : null}
+            {page.providerActionMessage ? <NoDataCallout mb="4">{page.providerActionMessage}</NoDataCallout> : null}
           </>
         ) : undefined}
       />
@@ -188,12 +196,9 @@ function providerSearchText(provider: ProviderView) {
     model.operationalSummary(),
     ...model.protocolLabels(),
     provider.providerId,
-    provider.productInfoId,
     provider.providerCredentialId,
     provider.surfaceId,
-    provider.runtime?.displayName,
-    ...(provider.runtime?.catalog?.models || []).map((item) => item.providerModelId),
-    ...(provider.modelCatalog?.models || []).map((item) => item.providerModelId),
+    ...provider.models.map((item) => item.providerModelId),
   ];
   return values
     .filter((value): value is string => Boolean(value?.trim()))

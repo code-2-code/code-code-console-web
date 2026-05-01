@@ -7,9 +7,17 @@ import {
   UpdateProviderObservabilityAuthenticationRequestSchema,
   UpdateProviderRequestSchema,
 } from "@code-code/agent-contract/platform/management/v1";
-import { jsonRequest, protobufJsonReadOptions } from "@code-code/console-web-ui";
+import { jsonFetcher, jsonRequest, protobufJsonReadOptions } from "@code-code/console-web-ui";
+import useSWR from "swr";
+import type { ProviderAuthenticationSummary } from "./api-types";
 
 const providersPath = "/api/providers";
+
+export type ProbeProviderModelCatalogResponse = {
+  providerId?: string;
+  providerIds?: string[];
+  message?: string;
+};
 
 export async function updateProvider(providerId: string, displayName: string): Promise<ProviderView> {
   const request = create(UpdateProviderRequestSchema, {
@@ -61,8 +69,38 @@ export async function updateProviderObservabilityAuthentication(providerId: stri
   return fromJson(ProviderViewSchema, data, protobufJsonReadOptions);
 }
 
+export function useProviderAuthenticationSummary(providerId?: string) {
+  const normalizedProviderID = providerId?.trim() || "";
+  const key = normalizedProviderID
+    ? `${providersPath}/${encodeURIComponent(normalizedProviderID)}/authentication-summary`
+    : null;
+  const { data, error, isLoading, mutate } = useSWR<ProviderAuthenticationSummary>(
+    key,
+    jsonFetcher<ProviderAuthenticationSummary>,
+    { revalidateOnFocus: true },
+  );
+  return {
+    summary: data,
+    error,
+    isLoading,
+    isError: Boolean(error),
+    mutate,
+  };
+}
+
 export async function deleteProvider(providerId: string) {
   await jsonRequest<void>(`${providersPath}/${providerId}`, {
     method: "DELETE",
   });
+}
+
+export async function probeProviderModelCatalog(providerId: string) {
+  const normalizedProviderID = providerId.trim();
+  if (!normalizedProviderID) {
+    return { message: "no provider to probe" } satisfies ProbeProviderModelCatalogResponse;
+  }
+  return jsonRequest<ProbeProviderModelCatalogResponse>(
+    `${providersPath}/${encodeURIComponent(normalizedProviderID)}/model-catalog:probe`,
+    { method: "POST" },
+  );
 }

@@ -1,4 +1,4 @@
-import type { ProviderModelCatalogEntry } from "@code-code/agent-contract/provider/v1";
+import type { ProviderModel } from "@code-code/agent-contract/provider/v1";
 
 export type ProviderModelPresentation = {
   detail: string;
@@ -7,8 +7,8 @@ export type ProviderModelPresentation = {
   providerModelId: string;
 };
 
-export function describeProviderModelCatalogEntry(
-  model: ProviderModelCatalogEntry,
+export function describeProviderModel(
+  model: ProviderModel,
 ): ProviderModelPresentation {
   const providerModelId = model.providerModelId.trim();
   const canonicalModelId = model.modelRef?.modelId?.trim() || "";

@@ -19,19 +19,21 @@ export function ModelsPagination({
 }: ModelsPaginationProps) {
   if (!hasNextPage && !hasPreviousPage) return null;
 
+  const pageLabel = totalPages != null && totalPages > 1
+    ? `Page ${page} of ${totalPages}`
+    : `Page ${page}`;
+
   return (
-    <Flex align="center" justify="between" gap="3" p="4">
-      <Text size="1" color="gray">
-        {totalPages && totalPages > 0 ? `Page ${page} / ${totalPages}` : `Page ${page}`}
+    <Flex align="center" justify="center" gap="3" pt="4">
+      <Button variant="soft" color="gray" size="1" disabled={!hasPreviousPage} onClick={onPrevious}>
+        ← Prev
+      </Button>
+      <Text size="1" color="gray" style={{ minWidth: 80, textAlign: "center" }}>
+        {pageLabel}
       </Text>
-      <Flex gap="2">
-        <Button variant="soft" color="gray" disabled={!hasPreviousPage} onClick={onPrevious}>
-          Previous
-        </Button>
-        <Button variant="soft" color="gray" disabled={!hasNextPage} onClick={onNext}>
-          Next
-        </Button>
-      </Flex>
+      <Button variant="soft" color="gray" size="1" disabled={!hasNextPage} onClick={onNext}>
+        Next →
+      </Button>
     </Flex>
   );
 }

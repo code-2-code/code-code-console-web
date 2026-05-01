@@ -9,7 +9,7 @@ import {
   defaultRuntimeModelId,
   findSessionRuntimeSurface,
   findSessionRuntimeProvider,
-  cloneRuntimeRef,
+  cloneProviderEndpoint,
   normalizeInlineDraftWithSessionRuntimeOptions,
   type SessionRuntimeOptions,
 } from "./session-runtime-options";
@@ -80,7 +80,8 @@ function updateInlinePrimarySurface(draft: ChatInlineSetup, surfaceValue: string
     ...draft,
     runtimeConfig: create(AgentSessionRuntimeConfigSchema, {
       ...draft.runtimeConfig,
-      providerRuntimeRef: surface ? cloneRuntimeRef(surface.runtimeRef) : undefined,
+      providerId: surface?.providerId || "",
+      endpoint: surface?.endpoint ? cloneProviderEndpoint(surface.endpoint) : undefined,
     }),
   };
 }
@@ -97,7 +98,7 @@ function updateInlinePrimaryModel(draft: ChatInlineSetup, modelId: string): Chat
 
 function appendInlineFallback(draft: ChatInlineSetup, runtimeOptions: SessionRuntimeOptions): ChatInlineSetup {
   const provider = findSessionRuntimeProvider(runtimeOptions, draft.providerId);
-  const surface = findSessionRuntimeSurface(provider, draft.runtimeConfig.providerRuntimeRef)
+  const surface = findSessionRuntimeSurface(provider, draft.runtimeConfig)
     || provider?.surfaces[0]
     || null;
   const modelId = defaultRuntimeModelId(surface);
@@ -111,7 +112,8 @@ function appendInlineFallback(draft: ChatInlineSetup, runtimeOptions: SessionRun
       fallbacks: [
         ...draft.runtimeConfig.fallbacks,
         create(AgentSessionRuntimeFallbackCandidateSchema, {
-          providerRuntimeRef: cloneRuntimeRef(surface.runtimeRef),
+          providerId: surface.providerId,
+          endpoint: surface.endpoint ? cloneProviderEndpoint(surface.endpoint) : undefined,
           modelSelector: createProviderFallbackModelSelector(modelId),
         }),
       ],
@@ -144,7 +146,8 @@ function updateInlineFallbackSurface(
         currentIndex === index
           ? create(AgentSessionRuntimeFallbackCandidateSchema, {
               ...item,
-              providerRuntimeRef: surface ? cloneRuntimeRef(surface.runtimeRef) : undefined,
+              providerId: surface?.providerId || "",
+              endpoint: surface?.endpoint ? cloneProviderEndpoint(surface.endpoint) : undefined,
             })
           : item
       )),

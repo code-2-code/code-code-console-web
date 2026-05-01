@@ -23,7 +23,8 @@ import {
 import type { AgentProfileDraft, CLIReference, MCPResourceSummary, TextResourceSummary } from "../domain/types";
 import type { SessionRuntimeOptions } from "../domain/types";
 import type { ProviderView } from "@code-code/agent-contract/platform/management/v1";
-import type { VendorView } from "@code-code/agent-contract/platform/provider/v1";
+import type { ProductInfo } from "@code-code/agent-contract/product-info/v1";
+import type { Surface } from "@code-code/agent-contract/platform/support/v1";
 
 type ProfileEditorDialogProps = {
   open: boolean;
@@ -32,7 +33,8 @@ type ProfileEditorDialogProps = {
   clis: CLIReference[];
   sessionRuntimeOptions: SessionRuntimeOptions;
   providers: ProviderView[];
-  vendors: VendorView[];
+  surfaces: Surface[];
+  productInfos: ProductInfo[];
   mcps: MCPResourceSummary[];
   skills: TextResourceSummary[];
   rules: TextResourceSummary[];
@@ -47,7 +49,8 @@ export function ProfileEditorDialog({
   clis,
   sessionRuntimeOptions,
   providers,
-  vendors,
+  surfaces,
+  productInfos,
   mcps,
   skills,
   rules,
@@ -94,8 +97,8 @@ export function ProfileEditorDialog({
   const availableSkills = useMemo(() => readAvailableResources(skills, draft.skillIds), [draft.skillIds, skills]);
   const availableRules = useMemo(() => readAvailableResources(rules, draft.ruleIds), [draft.ruleIds, rules]);
   const fallbackProviders = useMemo(
-    () => readFallbackProviderOptions(providers, vendors, clis, draft),
-    [clis, draft, providers, vendors],
+    () => readFallbackProviderOptions(providers, surfaces, productInfos, sessionRuntimeOptions, draft),
+    [draft, productInfos, providers, sessionRuntimeOptions, surfaces],
   );
   const supportedTypes = useMemo(
     () => readSupportedProviderTypesLabel(draft.selectionStrategy.cliId, clis),

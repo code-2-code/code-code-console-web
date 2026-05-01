@@ -1,17 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { DEFAULT_MODEL_PAGE_SIZE, useModels, useVendors } from "./api";
+import { DEFAULT_MODEL_PAGE_SIZE, useModels } from "./api";
+import { useProductInfos, useProviderVendors } from "@code-code/console-web-credential";
 import { buildStructuredFilter, toggleSelected } from "./model-filter";
 import { SOURCE_BADGE_FREE } from "./source-badges";
 import { buildVendorIndex } from "./vendor-index";
 
 const FIRST_PAGE_TOKENS = [""];
 const SEARCH_DEBOUNCE_MS = 300;
-export type ModelAvailabilityFilter = "" | typeof SOURCE_BADGE_FREE;
 
 export function useModelRegistryState() {
   const [vendorIds, setVendorIds] = useState<string[]>([]);
   const [sourceIds, setSourceIds] = useState<string[]>([]);
-  const [availabilityFilter, setAvailabilityFilter] = useState<ModelAvailabilityFilter>("");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [hideDeprecated, setHideDeprecated] = useState(true);
   const [modelQuery, setModelQuery] = useState("");
@@ -26,9 +25,10 @@ export function useModelRegistryState() {
     }
   }, []);
 
-  const vendors = useVendors();
+  const vendors = useProviderVendors();
+  const { productInfos } = useProductInfos();
   const models = useModels({
-    structuredFilter: buildStructuredFilter(vendorIds, debouncedQuery, sourceIds, availabilityFilter, selectedCategory, hideDeprecated),
+    structuredFilter: buildStructuredFilter(vendorIds, debouncedQuery, sourceIds, selectedCategory, hideDeprecated),
     pageSize: DEFAULT_MODEL_PAGE_SIZE,
     pageToken: pageTokens[pageIndex]
   });
@@ -89,10 +89,6 @@ export function useModelRegistryState() {
     setSourceIds([]);
     resetPagination();
   }, [resetPagination]);
-  const handleAvailabilityChange = useCallback((value: ModelAvailabilityFilter) => {
-    setAvailabilityFilter(value);
-    resetPagination();
-  }, [resetPagination]);
   const handleCategoryChange = useCallback((value: string) => {
     setSelectedCategory(value);
     resetPagination();
@@ -104,7 +100,6 @@ export function useModelRegistryState() {
   const handleClearAllFilters = useCallback(() => {
     setVendorIds([]);
     setSourceIds([]);
-    setAvailabilityFilter("");
     setSelectedCategory("");
     setModelQuery("");
     setDebouncedQuery("");
@@ -115,8 +110,6 @@ export function useModelRegistryState() {
   }, [resetPagination]);
   const vendorsById = useMemo(() => buildVendorIndex(vendors.vendors), [vendors.vendors]);
   return {
-    availabilityFilter,
-    handleAvailabilityChange,
     handleCategoryChange,
     handleLifecycleToggle,
     handleModelQueryClear,
@@ -138,16 +131,17 @@ export function useModelRegistryState() {
     setPageIndex,
     vendorIds,
     vendorsById,
-    vendors
+    vendors,
+    supportVendors: vendors.vendors,
+    productInfos
   };
 }
 
-function estimateTotalPages(totalCount: number, nextPageToken: string, pageIndex: number) {
+function estimateTotalPages(totalCount: number, _nextPageToken: string, _pageIndex: number) {
   if (totalCount > 0) {
     return Math.max(1, Math.ceil(totalCount / DEFAULT_MODEL_PAGE_SIZE));
   }
-  if (nextPageToken) {
-    return pageIndex + 2;
-  }
+  // Backend did not provide a total — signal "unknown" so UI shows
+  // only Prev/Next without a misleading "Page X of Y" label.
   return 0;
 }

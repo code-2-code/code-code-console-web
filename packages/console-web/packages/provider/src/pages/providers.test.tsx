@@ -3,9 +3,9 @@ import { Theme } from "@radix-ui/themes";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { ProvidersPage } from "./providers";
-import { mutateProviderObservability, probeAllProviderObservability } from "../domains/providers/api";
+import { mutateProviderObservability, probeAllProviderObservability, probeProviderModelCatalog } from "../domains/providers/api";
 import { useProviders } from "../domains/providers/reference-data";
-import { useVendors } from "../domains/models/api";
+import { ProviderEndpointType } from "@code-code/agent-contract/provider/v1";
 import { ProviderProtocol } from "../domains/providers/provider-protocol";
 
 vi.mock("../domains/providers/reference-data", () => ({
@@ -17,11 +17,9 @@ vi.mock("../domains/providers/api", async () => {
     ...actual,
     mutateProviderObservability: vi.fn(),
     probeAllProviderObservability: vi.fn(),
+    probeProviderModelCatalog: vi.fn(),
   };
 });
-vi.mock("../domains/models/api", () => ({
-  useVendors: vi.fn(),
-}));
 vi.mock("@code-code/console-web-credential", () => ({
   mutateCredentials: vi.fn(),
   useProviderCLIs: () => ({
@@ -31,7 +29,28 @@ vi.mock("@code-code/console-web-credential", () => ({
     error: undefined,
     mutate: vi.fn(),
   }),
-
+  useProductInfos: () => ({
+    productInfos: [],
+    isLoading: false,
+    isError: false,
+    error: undefined,
+    mutate: vi.fn(),
+  }),
+  useProviderSurfaces: () => ({
+    surfaces: [{
+      surfaceId: "openai-compatible",
+      productInfoId: "openai",
+      modelCatalogProbeId: "openai-compatible",
+      spec: {
+        case: "api",
+        value: { apiEndpoints: [{ baseUrl: "https://api.openai.com/v1", protocol: ProviderProtocol.OPENAI_COMPATIBLE }] },
+      },
+    }],
+    isLoading: false,
+    isError: false,
+    error: undefined,
+    mutate: vi.fn(),
+  }),
   useProviderVendors: () => ({
     vendors: [],
     isLoading: false,
@@ -91,30 +110,27 @@ vi.mock("../domains/models/components/vendor-cell", () => ({
 }));
 
 const useProvidersMock = vi.mocked(useProviders);
-const useVendorsMock = vi.mocked(useVendors);
 const probeAllProviderObservabilityMock = vi.mocked(probeAllProviderObservability);
+const probeProviderModelCatalogMock = vi.mocked(probeProviderModelCatalog);
 const mutateProviderObservabilityMock = vi.mocked(mutateProviderObservability);
 
 const providerCatalogModel = { providerModelId: "gpt-4.1" };
 const providerMock = {
   providerId: "provider-1",
   displayName: "OpenAI",
-  vendorId: "openai",
   providerCredentialId: "cred-1",
   surfaceId: "openai-compatible",
-  runtime: {
-    displayName: "Responses API",
-    access: {
+  endpoints: [{
+    type: ProviderEndpointType.API,
+    shape: {
       case: "api",
       value: {
         protocol: ProviderProtocol.OPENAI_COMPATIBLE,
         baseUrl: "https://api.openai.com/v1",
       },
     },
-    catalog: {
-      models: [providerCatalogModel],
-    },
-  },
+  }],
+  models: [providerCatalogModel],
   status: {
     phase: 1,
   },
@@ -131,13 +147,13 @@ describe("ProvidersPage", () => {
 
     renderProvidersPage();
 
-    expect(screen.getAllByRole("button", { name: "Vendor API Key" })).not.toHaveLength(0);
+    expect(screen.getAllByRole("button", { name: "Provider API Key" })).not.toHaveLength(0);
     expect(screen.getAllByRole("button", { name: "Custom API Key" })).not.toHaveLength(0);
     expect(screen.getAllByRole("button", { name: "CLI OAuth" })).not.toHaveLength(0);
 
-    fireEvent.click(screen.getAllByRole("button", { name: "Vendor API Key" })[0]);
+    fireEvent.click(screen.getAllByRole("button", { name: "Provider API Key" })[0]);
 
-    expect(screen.getByText("dialog:vendorApiKey")).toBeInTheDocument();
+    expect(screen.getByText("dialog:surfaceApiKey")).toBeInTheDocument();
   });
 
   it("keeps empty state informational without duplicate add controls or helper text", () => {
@@ -146,7 +162,7 @@ describe("ProvidersPage", () => {
     renderProvidersPage();
 
     expect(screen.queryByText("Connect with")).not.toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "Vendor API Key" })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: "Provider API Key" })).toHaveLength(1);
     expect(screen.getAllByRole("button", { name: "Custom API Key" })).toHaveLength(1);
     expect(screen.getAllByRole("button", { name: "CLI OAuth" })).toHaveLength(1);
     expect(screen.getByText("No providers.")).toBeInTheDocument();
@@ -202,13 +218,6 @@ describe("ProvidersPage", () => {
     mutate,
     upsertProvider: vi.fn(),
   });
-    useVendorsMock.mockReturnValue({
-      vendors: [],
-      isLoading: false,
-      isError: false,
-      error: undefined,
-      mutate: vi.fn(),
-    });
 
     renderProvidersPage();
 
@@ -237,18 +246,42 @@ describe("ProvidersPage", () => {
     expect(mutateProviderObservabilityMock).toHaveBeenCalledTimes(1);
   });
 
+  it("triggers a provider model catalog probe from the provider card", async () => {
+    const mutate = vi.fn();
+    useProvidersMock.mockReturnValue({
+      providers: [providerMock],
+      isLoading: false,
+      isError: false,
+      mutate,
+      upsertProvider: vi.fn(),
+    });
+    probeProviderModelCatalogMock.mockResolvedValue({
+      providerId: "provider-1",
+      providerIds: ["provider-1"],
+      message: "provider model catalog probe completed",
+    });
+
+    renderProvidersPage();
+
+    fireEvent.click(screen.getByRole("button", { name: "Probe model catalog" }));
+
+    await screen.findByText("provider model catalog probe completed");
+    expect(probeProviderModelCatalogMock).toHaveBeenCalledWith("provider-1");
+    expect(mutate).toHaveBeenCalledTimes(1);
+  });
+
   it("closes the add dialog without opening the provider dialog after connect success", async () => {
     mockProvidersPageState();
 
     renderProvidersPage();
 
-    fireEvent.click(screen.getByRole("button", { name: "Vendor API Key" }));
-    expect(screen.getByText("dialog:vendorApiKey")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Provider API Key" }));
+    expect(screen.getByText("dialog:surfaceApiKey")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "complete-connect" }));
 
     await waitFor(() => {
-      expect(screen.queryByText("dialog:vendorApiKey")).not.toBeInTheDocument();
+      expect(screen.queryByText("dialog:surfaceApiKey")).not.toBeInTheDocument();
     });
     expect(screen.queryByText("provider:MiniMax")).not.toBeInTheDocument();
   });
@@ -274,13 +307,6 @@ function mockProvidersPageState() {
     mutate: vi.fn(),
     upsertProvider: vi.fn(),
   });
-  useVendorsMock.mockReturnValue({
-    vendors: [],
-    isLoading: false,
-    isError: false,
-    error: undefined,
-    mutate: vi.fn(),
-  });
 }
 
 function mockEmptyProvidersPageState() {
@@ -290,12 +316,5 @@ function mockEmptyProvidersPageState() {
     isError: false,
     mutate: vi.fn(),
     upsertProvider: vi.fn(),
-  });
-  useVendorsMock.mockReturnValue({
-    vendors: [],
-    isLoading: false,
-    isError: false,
-    error: undefined,
-    mutate: vi.fn(),
   });
 }

@@ -72,10 +72,6 @@ function createCodexItem(): ProviderOwnerObservabilityItem {
 function createCodexAccount(modelIDs: string[]): ProviderView {
   return {
     surfaceId: "instance-1",
-    runtime: {
-      catalog: {
-        models: modelIDs.map((providerModelId) => ({ providerModelId })),
-      },
-    },
+    models: modelIDs.map((providerModelId) => ({ providerModelId })),
   } as ProviderView;
 }

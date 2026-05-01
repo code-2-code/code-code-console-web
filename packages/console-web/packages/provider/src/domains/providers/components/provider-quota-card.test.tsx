@@ -31,7 +31,7 @@ describe("provider-quota-card", () => {
     vi.useRealTimers();
   });
 
-  it("prefers active query status over duplicate updated time", () => {
+  it("prefers quota query status over duplicate updated time", () => {
     render(
       <ProviderQuotaCard
         loading={false}
@@ -109,7 +109,7 @@ describe("provider-quota-card", () => {
       <ProviderQuotaCard
         loading={false}
         rows={[
-          { id: "row-1", label: "gemini-3-pro · RPD", value: "1K", progressUnavailableLabel: "limit only" },
+          { id: "row-1", label: "gemini-3-pro · Requests", value: "1K", progressUnavailableLabel: "limit only" },
         ]}
       />,
     );

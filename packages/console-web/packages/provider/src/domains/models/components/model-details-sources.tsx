@@ -1,4 +1,4 @@
-import type { VendorView } from "@code-code/agent-contract/platform/provider/v1";
+import type { Vendor } from "@code-code/agent-contract/platform/support/v1";
 import type { ModelRegistryEntry, RegistryModelSource } from "@code-code/agent-contract/platform/model/v1";
 import { Code, Flex, Separator, Text } from "@radix-ui/themes";
 import { SoftBadge } from "@code-code/console-web-ui";
@@ -9,7 +9,7 @@ import { vendorLookupKey } from "../vendor-index";
 
 type ModelDetailsSourcesProps = {
   row: ModelRegistryEntry;
-  vendorsById: Record<string, VendorView>;
+  vendorsById: Record<string, Vendor>;
 };
 
 export function ModelDetailsSources({ row, vendorsById }: ModelDetailsSourcesProps) {
@@ -36,7 +36,7 @@ export function ModelDetailsSources({ row, vendorsById }: ModelDetailsSourcesPro
 type SourceItemProps = {
   source: RegistryModelSource;
   separated: boolean;
-  vendorsById: Record<string, VendorView>;
+  vendorsById: Record<string, Vendor>;
 };
 
 function SourceItem({ source, separated, vendorsById }: SourceItemProps) {
@@ -45,7 +45,7 @@ function SourceItem({ source, separated, vendorsById }: SourceItemProps) {
   const priceTypeLabel = source.pricing?.priceType ? formatPriceType(source.pricing.priceType) : "";
   const definition = source.definition;
   const vendor = definition?.vendorId ? vendorsById[vendorLookupKey(definition.vendorId)] : undefined;
-  const vendorLabel = vendor?.displayName || definition?.vendorId || "Unknown vendor";
+  const vendorLabel = vendor?.vendor?.displayName || definition?.vendorId || "Unknown vendor";
   const definitionRef = definition?.vendorId && definition?.modelId
     ? `${definition.vendorId}/${definition.modelId}`
     : "";
@@ -55,7 +55,7 @@ function SourceItem({ source, separated, vendorsById }: SourceItemProps) {
     <Flex direction="column" gap="2">
       {separated ? <Separator size="4" /> : null}
       <Flex align="center" gap="2" wrap="wrap">
-        <VendorAvatar displayName={vendorLabel} iconUrl={vendor?.iconUrl} size="1" />
+        <VendorAvatar displayName={vendorLabel} iconUrl={vendor?.vendor?.iconUrl} size="1" />
         <Text size="2">{vendorLabel}</Text>
         <SoftBadge size="1" color="gray" label={source.sourceId} />
         <SoftBadge

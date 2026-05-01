@@ -1,16 +1,16 @@
-import { ProviderSurfaceKind } from "@code-code/agent-contract/provider/v1";
+import { ProviderEndpointType } from "@code-code/agent-contract/provider/v1";
 
-export function providerAuthenticationLabel(kind: ProviderSurfaceKind | undefined) {
+export function providerAuthenticationLabel(kind: ProviderEndpointType | undefined) {
   switch (kind) {
-    case ProviderSurfaceKind.CLI:
+    case ProviderEndpointType.CLI:
       return "CLI OAuth";
-    case ProviderSurfaceKind.API:
+    case ProviderEndpointType.API:
       return "API Key";
     default:
       return "Unknown Auth";
   }
 }
 
-export function providerConnectOptionAuthenticationLabel(kind: "vendorApiKey" | "customApiKey" | "cliOAuth") {
+export function providerConnectOptionAuthenticationLabel(kind: "surfaceApiKey" | "customApiKey" | "cliOAuth") {
   return kind === "cliOAuth" ? "CLI OAuth" : "API Key";
 }

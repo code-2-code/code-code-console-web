@@ -1,12 +1,10 @@
 import { ModelService, type ModelListFilter, type ModelRegistryEntry } from "@code-code/agent-contract/platform/model/v1";
-import { ProviderService, type VendorView } from "@code-code/agent-contract/platform/provider/v1";
 import useSWR from "swr";
 import { connectClient } from "@code-code/console-web-ui";
 
 export const DEFAULT_MODEL_PAGE_SIZE = 20;
 
 const modelServiceClient = connectClient(ModelService);
-const providerServiceClient = connectClient(ProviderService);
 
 export type ModelListQuery = {
   structuredFilter?: ModelListFilter;
@@ -21,17 +19,6 @@ export function useModels(query: ModelListQuery, enabled = true) {
     models: data?.items || ([] as ModelRegistryEntry[]),
     nextPageToken: data?.nextPageToken || "",
     totalCount: Number(data?.totalCount ?? 0n),
-    isLoading,
-    isError: !!error,
-    error,
-    mutate
-  };
-}
-
-export function useVendors() {
-  const { data, error, isLoading, mutate } = useSWR("connect:provider-vendors", () => providerServiceClient.listVendors({}));
-  return {
-    vendors: data?.items || ([] as VendorView[]),
     isLoading,
     isError: !!error,
     error,

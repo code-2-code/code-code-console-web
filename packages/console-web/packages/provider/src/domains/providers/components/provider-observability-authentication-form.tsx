@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { ActiveQueryInputPersistence } from "@code-code/agent-contract/observability/v1";
+import { QuotaQueryInputPersistence } from "@code-code/agent-contract/observability/v1";
 import type { ProviderView } from "@code-code/agent-contract/platform/management/v1";
 import { DialogFooterActions, ErrorCalloutIf, FormTextAreaField, FormTextField, requestErrorMessage } from "@code-code/console-web-ui";
 import { updateProviderObservabilityAuthentication } from "../api-provider";
@@ -60,7 +60,7 @@ export function ProviderObservabilityAuthenticationForm({
     <form onSubmit={submit}>
       {presentation.fields.map((field) => {
         const error = methods.formState.errors.values?.[field.key]?.message;
-        const preservesExistingValue = field.persistence === ActiveQueryInputPersistence.STORED_MATERIAL;
+        const preservesExistingValue = field.persistence === QuotaQueryInputPersistence.STORED_MATERIAL;
         const common = {
           label: field.label,
           description: preservesExistingValue ? appendKeepExistingHint(field.description) : field.description,
@@ -116,7 +116,7 @@ function appendKeepExistingHint(description: string | undefined) {
 }
 
 function fieldDefaultValue(_provider: ProviderView, field: ProviderObservabilityAuthField) {
-	if (field.sensitive || field.persistence !== ActiveQueryInputPersistence.STORED_MATERIAL) {
+	if (field.sensitive || field.persistence !== QuotaQueryInputPersistence.STORED_MATERIAL) {
 		return field.defaultValue ?? "";
 	}
 	return field.defaultValue ?? "";

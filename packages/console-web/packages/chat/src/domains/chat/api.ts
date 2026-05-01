@@ -94,9 +94,10 @@ export async function listSessionRuntimeOptions(): Promise<SessionRuntimeOptions
         providerId: item.providerId,
         label: item.label,
         executionClasses: [...item.executionClasses],
-        surfaces: item.surfaces.flatMap((surface) => surface.runtimeRef
+        surfaces: item.surfaces.flatMap((surface) => surface.endpoint
           ? [{
-              runtimeRef: surface.runtimeRef,
+              providerId: surface.providerId,
+              endpoint: surface.endpoint,
               label: surface.label,
               models: [...surface.models],
             }]

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ProviderSurfaceRuntime } from "@code-code/agent-contract/provider/v1";
+import { ProviderEndpointType, type ProviderEndpoint } from "@code-code/agent-contract/provider/v1";
 import type { CLI } from "@code-code/agent-contract/platform/support/v1";
 import type { Vendor } from "@code-code/agent-contract/platform/support/v1";
 import type { ProviderView } from "@code-code/agent-contract/platform/management/v1";
@@ -26,9 +26,8 @@ describe("provider-card-capability", () => {
       cliId: "codex",
       displayName: "Codex CLI",
       oauth: {
-        providerBinding: { surfaceId: "codex-cli" },
         observability: {
-          profiles: [{ collection: { case: "activeQuery", value: {} } }],
+          profiles: [{ collection: { case: "quotaQuery", value: {} } }],
         },
       },
     }];
@@ -46,21 +45,25 @@ describe("provider-card-capability", () => {
     const provider: ProviderView = {
       providerId: "provider-1",
       displayName: "OpenAI",
-      productInfoId: "openai",
       surfaceId: "openai-api",
-      runtime: apiRuntime(),
+      endpoints: [apiEndpoint()],
+      models: [],
     };
     const vendors: Vendor[] = [{
       vendor: {
         vendorId: "openai",
         displayName: "OpenAI",
       },
-      providerBindings: [{
-        providerBinding: { surfaceId: "openai-api" },
-        observability: {
-          profiles: [{ collection: { case: "activeQuery", value: {} } }],
+      surfaces: [{
+        surfaceId: "openai-api",
+        productInfoId: "openai",
+        spec: {
+          case: "api",
+          value: { apiEndpoints: [{ baseUrl: "https://api.openai.com/v1", protocol: ProviderProtocol.OPENAI_COMPATIBLE }] },
         },
-        surfaceTemplates: [],
+        observability: {
+          profiles: [{ collection: { case: "quotaQuery", value: {} } }],
+        },
       }],
     }];
 
@@ -79,26 +82,27 @@ function createCLIProvider(): ProviderView {
     providerId: "provider-1",
     displayName: "Codex",
     surfaceId: "codex-cli",
-    runtime: cliRuntime("codex"),
+    endpoints: [cliEndpoint("codex")],
+    models: [],
   };
 }
 
-function cliRuntime(cliId: string): ProviderSurfaceRuntime {
+function cliEndpoint(cliId: string): ProviderEndpoint {
   return {
-    displayName: "Codex",
-    access: {
+    type: ProviderEndpointType.CLI,
+    shape: {
       case: "cli",
       value: { cliId },
     },
-  } as ProviderSurfaceRuntime;
+  } as ProviderEndpoint;
 }
 
-function apiRuntime(): ProviderSurfaceRuntime {
+function apiEndpoint(): ProviderEndpoint {
   return {
-    displayName: "Responses",
-    access: {
+    type: ProviderEndpointType.API,
+    shape: {
       case: "api",
       value: { protocol: ProviderProtocol.OPENAI_COMPATIBLE, baseUrl: "https://api.openai.com/v1" },
     },
-  } as ProviderSurfaceRuntime;
+  } as ProviderEndpoint;
 }

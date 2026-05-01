@@ -1,16 +1,12 @@
-import type { VendorView } from "@code-code/agent-contract/platform/provider/v1";
+import type { Vendor } from "@code-code/agent-contract/platform/support/v1";
 import type { CSSProperties, ReactNode } from "react";
 import { useMemo } from "react";
 import { Badge, Box, Button, Checkbox, Flex, Heading, ScrollArea, Text } from "@radix-ui/themes";
 import { SoftBadge } from "@code-code/console-web-ui";
-import { SOURCE_BADGE_FREE } from "../source-badges";
-import type { ModelAvailabilityFilter } from "../use-model-registry-state";
 import { buildSourceOptions, buildVendorOptions } from "./model-table-filter-options";
 import { VendorAvatar } from "./vendor-avatar";
 
 type ModelFacetSidebarProps = {
-  availabilityFilter: ModelAvailabilityFilter;
-  onAvailabilityChange: (value: ModelAvailabilityFilter) => void;
   onSourceClear: () => void;
   onSourceToggle: (value: string) => void;
   onVendorClear: () => void;
@@ -19,13 +15,11 @@ type ModelFacetSidebarProps = {
   selectedSourceIds: string[];
   selectedVendorIds: string[];
   sticky?: boolean;
-  vendors: VendorView[];
+  vendors: Vendor[];
   vendorsLoading?: boolean;
 };
 
 export function ModelFacetSidebar({
-  availabilityFilter,
-  onAvailabilityChange,
   onSourceClear,
   onSourceToggle,
   onVendorClear,
@@ -105,22 +99,6 @@ export function ModelFacetSidebar({
             );
           })}
         </Flex>
-      </FacetSection>
-
-      <FacetSection
-        title="Availability"
-        summary={availabilityFilter === SOURCE_BADGE_FREE ? "Free only" : "All"}
-        onClear={() => onAvailabilityChange("")}
-        clearDisabled={availabilityFilter === ""}
-      >
-        <label style={availabilityFilter === SOURCE_BADGE_FREE ? selectedFacetOptionStyle : facetOptionStyle}>
-          <Checkbox
-            checked={availabilityFilter === SOURCE_BADGE_FREE}
-            onCheckedChange={(checked) => onAvailabilityChange(checked === true ? SOURCE_BADGE_FREE : "")}
-            size="1"
-          />
-          <SoftBadge color="green" highContrast={false} label="Free" size="1" />
-        </label>
       </FacetSection>
     </Flex>
   );
