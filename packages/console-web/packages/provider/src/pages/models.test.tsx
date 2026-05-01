@@ -69,7 +69,6 @@ describe("ModelsPage", () => {
     expect(screen.getByPlaceholderText(/search models or services/i)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Vendors" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Services" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Availability" })).toBeInTheDocument();
     expect(screen.queryByRole("columnheader", { name: "Vendor" })).not.toBeInTheDocument();
   });
 

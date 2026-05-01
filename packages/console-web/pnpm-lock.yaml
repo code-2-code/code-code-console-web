@@ -28,7 +28,7 @@ importers:
         specifier: ^8.58.1
         version: 8.58.1(eslint@10.2.0)(typescript@6.0.2)
 
-  ../agent-contract:
+  ../../code-code-contracts/packages/agent-contract:
     dependencies:
       '@bufbuild/protobuf':
         specifier: 2.11.0
@@ -45,7 +45,7 @@ importers:
         version: 2.11.0
       '@code-code/agent-contract':
         specifier: workspace:*
-        version: link:../../agent-contract
+        version: link:../../../code-code-contracts/packages/agent-contract
       '@code-code/console-web-agentprofile':
         specifier: workspace:*
         version: link:../packages/agentprofile
@@ -163,7 +163,7 @@ importers:
         version: 2.11.0
       '@code-code/agent-contract':
         specifier: workspace:*
-        version: link:../../../agent-contract
+        version: link:../../../../code-code-contracts/packages/agent-contract
       '@code-code/console-web-ui':
         specifier: workspace:*
         version: link:../ui
@@ -224,7 +224,7 @@ importers:
         version: 2.11.0
       '@code-code/agent-contract':
         specifier: workspace:*
-        version: link:../../../agent-contract
+        version: link:../../../../code-code-contracts/packages/agent-contract
       '@code-code/console-web-ui':
         specifier: workspace:*
         version: link:../ui
@@ -285,7 +285,7 @@ importers:
         version: 2.11.0
       '@code-code/agent-contract':
         specifier: workspace:*
-        version: link:../../../agent-contract
+        version: link:../../../../code-code-contracts/packages/agent-contract
       '@code-code/console-web-ui':
         specifier: workspace:*
         version: link:../ui
@@ -340,7 +340,7 @@ importers:
         version: 2.11.0
       '@code-code/agent-contract':
         specifier: workspace:*
-        version: link:../../../agent-contract
+        version: link:../../../../code-code-contracts/packages/agent-contract
       '@code-code/console-web-credential':
         specifier: workspace:*
         version: link:../credential
@@ -395,7 +395,7 @@ importers:
         version: 2.11.0
       '@code-code/agent-contract':
         specifier: workspace:*
-        version: link:../../../agent-contract
+        version: link:../../../../code-code-contracts/packages/agent-contract
       '@code-code/console-web-credential':
         specifier: workspace:*
         version: link:../credential
@@ -499,7 +499,7 @@ importers:
         version: 2.11.0
       '@code-code/agent-contract':
         specifier: workspace:*
-        version: link:../../agent-contract
+        version: link:../../../code-code-contracts/packages/agent-contract
       '@code-code/console-web-agentprofile':
         specifier: workspace:*
         version: link:../packages/agentprofile
@@ -739,8 +739,8 @@ packages:
   '@chevrotain/utils@12.0.0':
     resolution: {integrity: sha512-lB59uJoaGIfOOL9knQqQRfhl9g7x8/wqFkp13zTdkRu1huG9kg6IJs1O8hqj9rs6h7orGxHJUKb+mX3rPbWGhA==}
 
-  '@code-code/agent-contract@file:../agent-contract':
-    resolution: {directory: ../agent-contract, type: directory}
+  '@code-code/agent-contract@file:../../code-code-contracts/packages/agent-contract':
+    resolution: {directory: ../../code-code-contracts/packages/agent-contract, type: directory}
     engines: {node: '>=24'}
 
   '@code-code/console-web-chat@file:packages/chat':
@@ -4318,7 +4318,7 @@ snapshots:
 
   '@chevrotain/utils@12.0.0': {}
 
-  '@code-code/agent-contract@file:../agent-contract':
+  '@code-code/agent-contract@file:../../code-code-contracts/packages/agent-contract':
     dependencies:
       '@bufbuild/protobuf': 2.11.0
 
@@ -4327,7 +4327,7 @@ snapshots:
       '@ag-ui/client': 0.0.52
       '@ag-ui/core': 0.0.52
       '@bufbuild/protobuf': 2.11.0
-      '@code-code/agent-contract': file:../agent-contract
+      '@code-code/agent-contract': file:../../code-code-contracts/packages/agent-contract
       '@code-code/console-web-ui': file:packages/ui(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       '@copilotkit/react-core': 1.56.2(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(graphql@16.13.2)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(zod@4.3.6)
       '@radix-ui/themes': 3.3.0(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react@19.2.5)

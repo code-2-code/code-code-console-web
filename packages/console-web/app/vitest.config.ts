@@ -3,9 +3,12 @@ import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 
-const agentContractSrc = resolve(dirname(fileURLToPath(import.meta.url)), "../../agent-contract/src");
+const agentContractSrc = resolve(dirname(fileURLToPath(import.meta.url)), "../../../code-code-contracts/packages/agent-contract/src");
+const agentProfileSrc = resolve(dirname(fileURLToPath(import.meta.url)), "../packages/agentprofile/src");
 const chatSrc = resolve(dirname(fileURLToPath(import.meta.url)), "../packages/chat/src");
 const overviewSrc = resolve(dirname(fileURLToPath(import.meta.url)), "../packages/overview/src");
+const providerSrc = resolve(dirname(fileURLToPath(import.meta.url)), "../packages/provider/src");
+const uiSrc = resolve(dirname(fileURLToPath(import.meta.url)), "../packages/ui/src");
 
 export default defineConfig({
   plugins: [react()],
@@ -18,8 +21,11 @@ export default defineConfig({
       "@code-code/agent-contract/platform/agent-session-action/v1": resolve(agentContractSrc, "gen/platform/agent_session_action/v1/agent_session_action_pb.ts"),
       "@code-code/agent-contract/platform/chat/v1": resolve(agentContractSrc, "gen/platform/chat/v1/chat_service_pb.ts"),
       "@code-code/agent-contract/platform/management/v1": resolve(agentContractSrc, "gen/platform/management/v1/management_pb.ts"),
+      "@code-code/console-web-agentprofile": resolve(agentProfileSrc, "index.ts"),
       "@code-code/console-web-chat": resolve(chatSrc, "index.ts"),
       "@code-code/console-web-overview": resolve(overviewSrc, "index.ts"),
+      "@code-code/console-web-provider": resolve(providerSrc, "index.ts"),
+      "@code-code/console-web-ui": resolve(uiSrc, "index.ts"),
     },
   },
   test: {

@@ -2,7 +2,8 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 
-const agentContractSrc = resolve(dirname(fileURLToPath(import.meta.url)), "../../../agent-contract/src");
+const agentContractSrc = resolve(dirname(fileURLToPath(import.meta.url)), "../../../../code-code-contracts/packages/agent-contract/src");
+const credentialSrc = resolve(dirname(fileURLToPath(import.meta.url)), "../credential/src");
 
 export default defineConfig({
   resolve: {
@@ -12,6 +13,7 @@ export default defineConfig({
       "@code-code/agent-contract/platform/agent-session/v1": resolve(agentContractSrc, "gen/platform/agent_session/v1/agent_session_pb.ts"),
       "@code-code/agent-contract/platform/agent-session-action/v1": resolve(agentContractSrc, "gen/platform/agent_session_action/v1/agent_session_action_pb.ts"),
       "@code-code/agent-contract/platform/management/v1": resolve(agentContractSrc, "gen/platform/management/v1/management_pb.ts"),
+      "@code-code/console-web-credential": resolve(credentialSrc, "index.ts"),
     },
   },
   test: {

@@ -1,5 +1,5 @@
 packages:
-  - "../agent-contract"
+  - "../../code-code-contracts/packages/agent-contract"
   - "app"
   - "showcase"
   - "packages/*"

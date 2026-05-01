@@ -2,7 +2,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 
-const agentContractSrc = resolve(dirname(fileURLToPath(import.meta.url)), "../../../agent-contract/src");
+const agentContractSrc = resolve(dirname(fileURLToPath(import.meta.url)), "../../../../code-code-contracts/packages/agent-contract/src");
 
 export default defineConfig({
   resolve: {
