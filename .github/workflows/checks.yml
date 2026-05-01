@@ -64,12 +64,13 @@ jobs:
         working-directory: packages/console-web
         run: |
           pnpm config set store-dir "${PNPM_HOME:-$HOME/.local/share/pnpm}/store"
-          pnpm install --frozen-lockfile --prefer-offline
+          pnpm fetch --frozen-lockfile
+          pnpm install --frozen-lockfile --offline
 
-      - name: Typecheck
+      - name: Build
         working-directory: packages/console-web
-        run: pnpm typecheck
+        run: pnpm build
 
       - name: Test
         working-directory: packages/console-web
-        run: pnpm test
+        run: pnpm -r test
